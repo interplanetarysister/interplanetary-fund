@@ -8,12 +8,22 @@
     "preview": "vite preview",
     "convex": "convex dev",
     "convex:deploy": "convex deploy",
-    "convex:dashboard": "convex dashboard"
+    "convex:dashboard": "convex dashboard",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:android": "npm run cap:sync && npx cap open android",
+    "cap:ios": "npm run cap:sync && npx cap open ios",
+    "cap:init:android": "npx cap add android",
+    "cap:init:ios": "npx cap add ios",
+    "mobile:build:apk": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "convex": "^1.43.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/ios": "^6.1.0",
+    "@capacitor/splash-screen": "^6.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",
@@ -21,8 +31,9 @@
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.0",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "@capacitor/cli": "^6.1.0"
   },
-  "keywords": ["interplanetary-fund", "agents", "protocol", "treasury", "convex", "react"],
+  "keywords": ["interplanetary-fund", "agents", "protocol", "treasury", "convex", "react", "capacitor", "mobile"],
   "license": "MIT"
 }

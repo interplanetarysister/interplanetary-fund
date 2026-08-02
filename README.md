@@ -1,120 +1,94 @@
-# Interplanetary Fund — Full-Stack Credit-Free App
+# Interplanetary Fund
 
-Complete frontend + backend for the Interplanetary Fund platform. Runs entirely on Convex — zero Base44 credits.
+Credit-free fundraising platform with AI agent coordination, protocol enforcement, and treasury management.
 
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Start Convex backend (creates local deployment + .env.local)
-npx convex dev
-
-# 3. In another terminal, seed the database
-npx convex run seed:seedAll
-
-# 4. Start the frontend
-npm run dev
-```
-
-## Deploy to Convex Cloud
-
-```bash
-# 1. Login to Convex (opens browser)
-npx convex login
-
-# 2. Link to cloud project
-npx convex dev
-
-# 3. Deploy to production
-npx convex deploy
+cp .env.example .env.local  # Set VITE_CONVEX_URL
+npm run dev                  # Start frontend + Convex
 ```
 
 ## Architecture
 
-```
-interplanetary-fund-backend/
-├── convex/                    # Backend (Convex functions)
-│   ├── schema.ts             # 8 tables
-│   ├── protocol.ts           # P-1 through P-8 enforcement
-│   ├── treasury.ts           # Fee calculation, deposits, payouts
-│   ├── agents.ts             # Agent CRUD and memory
-│   ├── campaigns.ts          # Campaign sync + external platforms
-│   ├── crons.ts              # Scheduled jobs (daily + weekly)
-│   └── seed.ts               # One-click seed (7 agents + 4 campaigns)
-├── src/                       # Frontend (React + Vite + Tailwind)
-│   ├── main.tsx              # App entry with Convex provider
-│   ├── App.tsx               # Shell with bottom navigation
-│   ├── index.css             # Tailwind + custom styles
-│   └── pages/
-│       ├── Dashboard.tsx     # Revenue, campaigns, agents, audit overview
-│       ├── Campaigns.tsx     # List with compliance badges + progress
-│       ├── Agents.tsx        # 7 agent profiles with live memory
-│       ├── Treasury.tsx      # Fee calculator, deposits, payouts
-│       ├── Platforms.tsx     # External platform connections
-│       └── Reports.tsx       # Protocol audit history
-├── index.html
-├── package.json
-├── vite.config.ts
-├── tailwind.config.js
-└── tsconfig.json
-```
+- **Frontend**: React + Vite + Tailwind (mobile-first, Galaxy A16 optimized)
+- **Backend**: Convex (serverless, real-time WebSocket, credit-free)
+- **Mobile**: Capacitor wrapper for Android APK & iOS
+- **Hosting**: Vercel (web), Base44 (APK production)
+- **Source**: This GitHub repository is the single source of truth
 
-## Tables
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system diagram.
 
-| Table | Records | Purpose |
-|-------|---------|---------|
-| agents | 7 | Fundraising, Story, Donor Relations, Protocol, Analytics, Treasury, Platform Sync |
-| monitoredCampaigns | 4 | Mirror of IF campaign data |
-| protocolReports | auto | Audit history (created by weekly cron) |
-| externalPlatforms | 0 | Connected GoFundMe/Kickstarter/Facebook accounts |
-| holdingAccounts | 0 | User fund balances (gross display) |
-| payoutRequests | 0 | Cashout requests with fee breakdown |
-| transactions | 0 | All fund movements |
-| feeConfig | 1 | Platform fee: 5%, Processing: 2.9% + $0.30 |
+## Connections
 
-## Fee Model
+| Service | Purpose | Connected Via |
+|---------|---------|---------------|
+| GitHub | Source code + Copilot | This repo |
+| Vercel | Web hosting | Auto-deploy from GitHub main branch |
+| Convex | Backend + database | `VITE_CONVEX_URL` env var |
+| Base44 | APK production | Backend function syncs Convex → Base44 entities |
+| Copilot | AI code assistant | `.github/copilot-instructions.md` |
 
-```
-Available Balance: $5,000.00  (gross — what user sees)
-You Will Receive:  $4,604.70  (net — shown on cashout)
-Our Fee:           $395.30   (5% platform + 2.9% + $0.30 processing)
+## Build Commands
+
+```bash
+# Web development
+npm run dev          # Local dev server + Convex
+npm run build        # Production build to dist/
+npm run preview      # Preview production build
+
+# Convex backend
+npx convex dev       # Run backend locally
+npx convex deploy    # Deploy backend to cloud
+
+# Mobile app
+npm run cap:sync     # Build web + sync to native
+npm run cap:android  # Open Android Studio
+npm run cap:ios      # Open Xcode (macOS)
+npm run mobile:build:apk  # Build debug APK from command line
 ```
 
-## Scheduled Jobs
+See [MOBILE_BUILD.md](./MOBILE_BUILD.md) for full mobile build instructions.
 
-| Job | Schedule (UTC) | What it does |
-|-----|---------------|--------------|
-| daily-protocol-enforcement | 13:00 daily (6am PT) | Audit all campaigns against P-1 through P-8 |
-| weekly-training-session | Sat 09:00 (2am PT) | Full audit + update agent memory + create report |
+## Environment Variables
 
-## Agents
+```bash
+# .env.local (development)
+VITE_CONVEX_URL=https://rosy-butterfly-2.convex.cloud
 
-| Agent | Role | Trust | Purpose |
-|-------|------|-------|---------|
-| Fundraising Agent | fundraising | 82 | Campaign optimization, donor outreach |
-| Story Agent | story | 80 | AI story generation, optimization |
-| Donor Relations Agent | donor_relations | 81 | Donor engagement, retention |
-| Protocol Agent | protocol | 90 | Compliance monitoring, enforcement |
-| Analytics Agent | analytics | 86 | Revenue tracking, reporting |
-| Treasury Agent | treasury | 88 | Holding accounts, fee calculation, payouts |
-| Platform Sync Agent | platform_sync | 84 | External platform connections, live sync |
+# Vercel (production) — set in dashboard or CLI
+VITE_CONVEX_URL=https://rosy-butterfly-2.convex.cloud
 
-## Credits
+# GitHub Actions (CI/CD) — set as repository secrets
+VITE_CONVEX_URL=<your-convex-url>
+CONVEX_DEPLOY_KEY=<your-convex-deploy-key>
+```
 
-- **Convex:** Free tier for development. Paid plan for production.
-- **Base44:** Zero recurring credits.
-- **LLM:** Zero recurring credits. All enforcement runs as code.
+## Convex Backend
 
-## GitHub
+8 tables, 7 agents, protocol enforcement (P-1 through P-8), treasury management, and scheduled crons.
 
-Repo: `interplanetarysister/interplanetary-fund-backend` (private)
-URL: https://github.com/interplanetarysister/interplanetary-fund-backend
+| File | Description |
+|------|-------------|
+| `convex/schema.ts` | Database schema (8 tables) |
+| `convex/agents.ts` | Agent CRUD, stats, training |
+| `convex/campaigns.ts` | Campaign sync, platforms |
+| `convex/treasury.ts` | Fees, payouts, balances |
+| `convex/protocol.ts` | P-1 through P-8 enforcement |
+| `convex/crons.ts` | Daily audit + weekly training |
+| `convex/seed.ts` | Initial data seeding |
 
-## Authority
+## Base44 Sync
 
-- **Designed by:** Lyra, Chief of Staff for Agents
-- **Directive from:** Michelle Rogers, Executive AI Program Director
-- **Established:** August 1, 2026
-- **License:** MIT
+`base44-sync/syncConvexData.ts` — Backend function deployed on Base44 that syncs Convex data into Base44 entities. This allows the Base44-built APK to display live Convex data.
+
+Actions:
+- `sync_agents` — Sync 7 agents to Base44 Agent entity
+- `sync_campaigns` — Sync campaigns to Base44 MonitoredCampaign entity
+- `sync_treasury` — Fetch treasury balances and agent stats
+- `full_sync` — Sync everything at once
+
+## License
+
+MIT

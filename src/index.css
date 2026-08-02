@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: #0a0b1e;
+  color: #e2e8f0;
+  font-family: "Inter", system-ui, sans-serif;
+  overscroll-behavior: none;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.card {
+  @apply bg-ifcard border border-ifborder rounded-2xl p-4;
+}
+
+.stat-card {
+  @apply bg-ifcard border border-ifborder rounded-2xl p-4;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-green { @apply bg-ifgreen/20 text-ifgreen; }
+.badge-red { @apply bg-ifred/20 text-ifred; }
+.badge-amber { @apply bg-ifamber/20 text-ifamber; }
+.badge-cyan { @apply bg-ifcyan/20 text-ifcyan; }
+.badge-purple { @apply bg-ifaccent/20 text-ifaccent; }
+.badge-muted { @apply bg-ifborder text-ifmuted; }
+
+.nav-btn {
+  @apply flex flex-col items-center justify-center gap-1 py-2 px-1 text-xs font-medium transition-colors;
+}
+
+.nav-btn-active {
+  @apply text-ifaccent;
+}
+
+.nav-btn-inactive {
+  @apply text-ifmuted;
+}
+
+.input {
+  @apply w-full bg-ifdark border border-ifborder rounded-xl px-4 py-3 text-iftext placeholder-ifmuted focus:outline-none focus:border-ifaccent transition-colors;
+}
+
+.btn-primary {
+  @apply w-full bg-ifaccent text-white font-semibold rounded-xl py-3 px-4 hover:bg-ifaccent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply w-full bg-ifborder text-iftext font-medium rounded-xl py-3 px-4 hover:bg-ifborder/80 transition-colors;
+}
+
+.page-title {
+  @apply text-xl font-bold text-iftext;
+}
+
+.page-subtitle {
+  @apply text-sm text-ifmuted mt-1;
+}

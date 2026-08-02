@@ -23,6 +23,15 @@ body {
   height: 0;
 }
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .card {
   @apply bg-ifcard border border-ifborder rounded-2xl p-4;
 }

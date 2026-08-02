@@ -56,6 +56,12 @@ export const getAllInteractionStats = query({
     const allInteractions = await ctx.db.query("supporterInteractions").collect();
     const allDonations = await ctx.db.query("donations").collect();
 
+    // Aggregate counts
+    const totalViews = allInteractions.filter((i) => i.interactionType === "view").length;
+    const totalClicks = allInteractions.filter((i) => i.interactionType === "click").length;
+    const totalShares = allInteractions.filter((i) => i.interactionType === "share").length;
+    const totalFollows = allInteractions.filter((i) => i.interactionType === "follow").length;
+
     // Group by campaign
     const byCampaign: Record<string, any> = {};
     for (const i of allInteractions) {
@@ -97,6 +103,10 @@ export const getAllInteractionStats = query({
 
     return {
       totalInteractions: allInteractions.length,
+      totalViews,
+      totalClicks,
+      totalShares,
+      totalFollows,
       totalDonations: allDonations.length,
       totalRaised: allDonations.reduce((s, d) => s + d.amount, 0),
       campaigns: Object.values(byCampaign),
@@ -293,59 +303,69 @@ export const bulkSyncExternalTotals = mutation({
     })),
   },
   handler: async (ctx, { syncs }) => {
-    let updated = 0;
+    let synced = 0;
+    const results: any[] = [];
+
     for (const s of syncs) {
       const campaign = await ctx.db.query("monitoredCampaigns")
         .withIndex("byIfId", (q) => q.eq("ifCampaignId", s.ifCampaignId))
         .first();
 
       if (campaign) {
+        const newRaised = campaign.raisedAmount + s.externalRaised;
+        const newDonors = campaign.donorCount + s.externalDonors;
         await ctx.db.patch(campaign._id, {
-          externalRaised: s.externalRaised,
-          externalDonors: s.externalDonors,
-          platformCount: s.platformCount ?? campaign.platformCount,
+          raisedAmount: newRaised,
+          donorCount: newDonors,
           lastSynced: new Date().toISOString(),
         });
-        updated++;
+        synced++;
+        results.push({ campaignId: s.ifCampaignId, status: "synced", newRaised, newDonors });
+      } else {
+        results.push({ campaignId: s.ifCampaignId, status: "not_found" });
       }
     }
 
-    return { status: "success", updated, total: syncs.length };
+    return { status: "success", synced, total: syncs.length, results };
   },
 });
 
-// Query: Get full campaign dashboard data — interactions + donations + external
-// One call for everything the frontend needs
+// Query: Get campaign dashboard data — combined view of campaign stats + interactions
 export const getCampaignDashboard = query({
-  args: { campaignId: v.string() },
-  handler: async (ctx, { campaignId }) => {
-    const campaign = await ctx.db.query("monitoredCampaigns")
-      .withIndex("byIfId", (q) => q.eq("ifCampaignId", campaignId))
-      .first();
+  args: {},
+  handler: async (ctx) => {
+    const campaigns = await ctx.db.query("monitoredCampaigns").collect();
+    const allInteractions = await ctx.db.query("supporterInteractions").collect();
+    const allDonations = await ctx.db.query("donations").collect();
 
-    if (!campaign) return { status: "not_found" };
-
-    const donations = await ctx.db.query("donations")
-      .withIndex("byCampaignId", (q) => q.eq("campaignId", campaignId))
-      .collect();
-
-    const interactions = await ctx.db.query("supporterInteractions")
-      .withIndex("byCampaignId", (q) => q.eq("campaignId", campaignId))
-      .collect();
+    const campaignData = campaigns.map((c) => {
+      const interactions = allInteractions.filter((i) => i.campaignId === c.ifCampaignId);
+      const donations = allDonations.filter((d) => d.campaignId === c.ifCampaignId);
+      return {
+        id: c._id,
+        ifCampaignId: c.ifCampaignId,
+        title: c.title,
+        status: c.status,
+        raisedAmount: c.raisedAmount,
+        goalAmount: c.goalAmount,
+        donorCount: c.donorCount,
+        progress: c.goalAmount > 0 ? Math.round((c.raisedAmount / c.goalAmount) * 100) : 0,
+        views: interactions.filter((i) => i.interactionType === "view").length,
+        clicks: interactions.filter((i) => i.interactionType === "click").length,
+        shares: interactions.filter((i) => i.interactionType === "share").length,
+        donations: donations.length,
+        donationTotal: donations.reduce((s, d) => s + d.amount, 0),
+      };
+    });
 
     return {
-      status: "success",
-      campaign,
-      stats: {
-        totalDonations: donations.length,
-        totalDonated: donations.reduce((s, d) => s + d.amount, 0),
-        totalInteractions: interactions.length,
-        views: interactions.filter((i) => i.interactionType === "view").length,
-        shares: interactions.filter((i) => i.interactionType === "share").length,
-        follows: interactions.filter((i) => i.interactionType === "follow").length,
-        clicks: interactions.filter((i) => i.interactionType === "click").length,
-        recentDonations: donations.slice(-5).reverse(),
-      },
+      totalCampaigns: campaigns.length,
+      activeCampaigns: campaigns.filter((c) => c.status === "active").length,
+      totalRaised: campaigns.reduce((s, c) => s + c.raisedAmount, 0),
+      totalDonors: campaigns.reduce((s, c) => s + c.donorCount, 0),
+      totalInteractions: allInteractions.length,
+      totalDonations: allDonations.length,
+      campaigns: campaignData,
     };
   },
 });

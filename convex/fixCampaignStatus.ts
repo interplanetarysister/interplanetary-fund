@@ -1,7 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// Set CashApp tag on all campaigns and activate drafts
+// Fix campaigns: activate drafts, set payment_active, add summaries
 export const fixAllCampaigns = mutation({
   args: {},
   handler: async (ctx) => {
@@ -10,11 +10,6 @@ export const fixAllCampaigns = mutation({
     
     for (const campaign of campaigns) {
       const updates: any = {};
-      
-      // Set CashApp tag if missing
-      if (!campaign.cashappTag) {
-        updates.cashappTag = "$unrewound";
-      }
       
       // Activate drafts
       if (campaign.status === "draft") {

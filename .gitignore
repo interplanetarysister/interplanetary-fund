@@ -5,3 +5,4 @@ convex/_generated/
 *.log
 .DS_Store
 dist/
+.env.convex

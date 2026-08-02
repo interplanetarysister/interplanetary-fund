@@ -22,7 +22,7 @@ export default defineSchema({
     allowedActions: v.array(v.string()),
     approvalRequired: v.boolean(),
     dataAccessLevel: v.string(),
-    limitations: v.array(v.string()),
+    limitations: v.optional(v.array(v.string())),
     restrictedActions: v.array(v.string()),
     workflowAccess: v.array(v.string()),
     workingMemory: v.array(v.string()),
@@ -37,7 +37,6 @@ export default defineSchema({
   }).index("byRole", ["role"]).index("byStatus", ["status"]),
 
   // MONITORED CAMPAIGNS — mirror of Interplanetary Fund Base44 Campaign entity
-  // 5 real campaigns with full AI profiles and external platform totals
   monitoredCampaigns: defineTable({
     ifCampaignId: v.string(),
     title: v.string(),
@@ -59,9 +58,9 @@ export default defineSchema({
     paymentActive: v.boolean(),
     lastSynced: v.string(),
     // External platform totals (from Base44 PlatformConnection entities)
-    externalRaised: v.number(),
-    externalDonors: v.number(),
-    platformCount: v.number(),
+    externalRaised: v.optional(v.number()),
+    externalDonors: v.optional(v.number()),
+    platformCount: v.optional(v.number()),
   }).index("byIfId", ["ifCampaignId"]).index("byStatus", ["status"]),
 
   // PROTOCOL REPORTS — persistent audit history
@@ -89,23 +88,21 @@ export default defineSchema({
   }).index("byDate", ["auditDate"]),
 
   // EXTERNAL PLATFORMS — 11 real platform connections from Base44
-  // bluesky, patreon, facebook, kofi, buymeacoffee, spotfund, fundrazr,
-  // indiegogo, givesendgo, kickstarter, gofundme
   externalPlatforms: defineTable({
     platform: v.string(),
-    kind: v.string(), // "social" | "crowdfunding"
+    kind: v.string(),
     displayName: v.string(),
     campaignId: v.string(),
     externalTotal: v.number(),
     externalDonorCount: v.number(),
-    status: v.string(), // "connected" | "disconnected" | "error"
-    automationMode: v.string(), // "auto" | "manual" | "ask" | "draft"
+    status: v.string(),
+    automationMode: v.string(),
     externalUrl: v.string(),
     lastSynced: v.string(),
     lastError: v.string(),
   }).index("byPlatform", ["platform"]).index("byCampaignId", ["campaignId"]),
 
-  // HOLDING ACCOUNTS — user fund balances
+  // HOLDING ACCOUNTS
   holdingAccounts: defineTable({
     userId: v.string(),
     totalBalance: v.number(),
@@ -115,7 +112,7 @@ export default defineSchema({
     lastUpdated: v.string(),
   }).index("byUserId", ["userId"]),
 
-  // PAYOUT REQUESTS — user cashout requests
+  // PAYOUT REQUESTS
   payoutRequests: defineTable({
     userId: v.string(),
     amountRequested: v.number(),
@@ -129,7 +126,7 @@ export default defineSchema({
     transactionId: v.optional(v.string()),
   }).index("byUserId", ["userId"]).index("byStatus", ["status"]),
 
-  // TRANSACTIONS — all fund movements
+  // TRANSACTIONS
   transactions: defineTable({
     userId: v.string(),
     type: v.string(),
@@ -141,7 +138,7 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("byUserId", ["userId"]).index("byType", ["type"]),
 
-  // FEE CONFIGURATION — platform fee settings
+  // FEE CONFIGURATION
   feeConfig: defineTable({
     platformFeePercent: v.number(),
     processingFeePercent: v.number(),

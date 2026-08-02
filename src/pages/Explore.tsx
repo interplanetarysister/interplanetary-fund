@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
-const PRESET_AMOUNTS = [5, 10, 25, 50];
+const PRESET_AMOUNTS = [5, 10, 25, 50, 100];
 const CASHAPP_TAG = "unrewound";
 const CASHAPP_URL = `https://cash.app/$${CASHAPP_TAG}`;
+const MIN_AMOUNT = 1;
 
 export default function Explore() {
   const campaigns = useQuery(api.campaigns.getCampaigns, {});
@@ -13,7 +14,7 @@ export default function Explore() {
   const recordInteraction = useMutation(api.interactions.recordInteraction);
 
   const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
-  const [donationAmount, setDonationAmount] = useState(25);
+  const [donationAmount, setDonationAmount] = useState<string>("25");
   const [donorName, setDonorName] = useState("");
   const [donationMessage, setDonationMessage] = useState("");
   const [donationStep, setDonationStep] = useState<"amount" | "info" | "processing" | "done">("amount");
@@ -30,6 +31,9 @@ export default function Explore() {
   const activeCampaigns = campaigns.filter((c: any) => c.status === "active");
   const totalRaised = (balances.grandTotal?.raised || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.raisedAmount || 0), 0);
   const totalDonors = (balances.grandTotal?.donors || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.donorCount || 0), 0);
+
+  const numericAmount = parseFloat(donationAmount) || 0;
+  const isValidAmount = numericAmount >= MIN_AMOUNT;
 
   const handleCampaignView = (campaign: any) => {
     const campaignKey = campaign.ifCampaignId;
@@ -52,7 +56,7 @@ export default function Explore() {
     }).catch(() => {});
 
     setSelectedCampaign(campaign);
-    setDonationAmount(25);
+    setDonationAmount("25");
     setDonorName("");
     setDonationMessage("");
     setDonationStep("amount");
@@ -82,22 +86,19 @@ export default function Explore() {
   };
 
   const handleCompleteDonation = async () => {
-    if (!selectedCampaign) return;
+    if (!selectedCampaign || !isValidAmount) return;
     setDonationStep("processing");
     try {
-      // Record the donation in Convex
       await recordDonation({
         campaignId: selectedCampaign.ifCampaignId,
         campaignTitle: selectedCampaign.title,
-        amount: donationAmount,
+        amount: numericAmount,
         donorName: donorName || "Anonymous",
         message: donationMessage || undefined,
         paymentMethod: "cashapp",
       });
 
-      // Redirect to CashApp with the amount pre-filled
-      // CashApp URL format: https://cash.app/$tag/amount
-      const cashappPayUrl = `${CASHAPP_URL}/${donationAmount}`;
+      const cashappPayUrl = `${CASHAPP_URL}/${numericAmount}`;
       window.open(cashappPayUrl, "_blank");
 
       setDonationStep("done");
@@ -227,7 +228,7 @@ export default function Explore() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
           <div
-            className="relative w-full max-w-md bg-ifcard rounded-t-3xl sm:rounded-3xl border border-ifborder p-6 space-y-4 animate-in"
+            className="relative w-full max-w-md bg-ifcard rounded-t-3xl sm:rounded-3xl border border-ifborder p-6 space-y-4 animate-in max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -242,16 +243,44 @@ export default function Explore() {
               <>
                 <div>
                   <h3 className="text-base font-bold text-iftext">Support "{selectedCampaign.title}"</h3>
-                  <p className="text-xs text-ifmuted mt-1">Choose an amount to donate</p>
+                  <p className="text-xs text-ifmuted mt-1">Enter any amount to donate</p>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">
+                {/* Big amount display */}
+                <div className="text-center py-4">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="text-3xl font-bold text-ifmuted">$</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="any"
+                      value={donationAmount}
+                      onChange={(e) => setDonationAmount(e.target.value)}
+                      className="w-32 bg-transparent text-4xl font-bold text-iftext text-center outline-none"
+                      placeholder="25"
+                      autoFocus
+                    />
+                  </div>
+                  {isValidAmount && (
+                    <p className="text-xs text-ifgreen mt-2">
+                      ${numericAmount.toLocaleString()} donation
+                    </p>
+                  )}
+                  {!isValidAmount && donationAmount !== "" && (
+                    <p className="text-xs text-red-400 mt-2">
+                      Minimum donation is $1
+                    </p>
+                  )}
+                </div>
+
+                {/* Quick select chips */}
+                <div className="flex flex-wrap gap-2 justify-center">
                   {PRESET_AMOUNTS.map((amt) => (
                     <button
                       key={amt}
-                      onClick={() => setDonationAmount(amt)}
-                      className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                        donationAmount === amt
+                      onClick={() => setDonationAmount(String(amt))}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                        donationAmount === String(amt)
                           ? "bg-ifaccent text-white"
                           : "bg-ifborder text-iftext"
                       }`}
@@ -261,23 +290,9 @@ export default function Explore() {
                   ))}
                 </div>
 
-                <div>
-                  <label className="text-xs text-ifmuted">Custom amount</label>
-                  <div className="mt-1 flex items-center gap-2 bg-ifborder rounded-xl px-3 py-2.5">
-                    <span className="text-ifmuted text-sm">$</span>
-                    <input
-                      type="number"
-                      value={donationAmount}
-                      onChange={(e) => setDonationAmount(Number(e.target.value))}
-                      className="flex-1 bg-transparent text-iftext text-sm outline-none"
-                      placeholder="Enter amount"
-                    />
-                  </div>
-                </div>
-
                 <button
                   onClick={() => setDonationStep("info")}
-                  disabled={donationAmount <= 0}
+                  disabled={!isValidAmount}
                   className="w-full py-3 rounded-xl bg-ifaccent text-white text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
                 >
                   Continue
@@ -291,7 +306,7 @@ export default function Explore() {
                 <div>
                   <h3 className="text-base font-bold text-iftext">Almost there!</h3>
                   <p className="text-xs text-ifmuted mt-1">
-                    Donating ${donationAmount} to "{selectedCampaign.title}"
+                    Donating ${numericAmount.toLocaleString()} to "{selectedCampaign.title}"
                   </p>
                 </div>
 
@@ -332,7 +347,7 @@ export default function Explore() {
                     onClick={handleCompleteDonation}
                     className="w-full py-3 rounded-xl bg-green-600 text-white text-sm font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
                   >
-                    Donate ${donationAmount} via CashApp
+                    Donate ${numericAmount.toLocaleString()} via CashApp
                   </button>
                 </div>
               </>
@@ -355,14 +370,14 @@ export default function Explore() {
                 <div>
                   <h3 className="text-base font-bold text-iftext">Thank you!</h3>
                   <p className="text-sm text-ifmuted mt-1">
-                    Your ${donationAmount} donation to "{selectedCampaign.title}" has been recorded.
+                    Your ${numericAmount.toLocaleString()} donation to "{selectedCampaign.title}" has been recorded.
                   </p>
                   <p className="text-[10px] text-ifmuted mt-2">
                     Complete your payment in CashApp if it didn't open automatically.
                   </p>
                 </div>
                 <a
-                  href={`${CASHAPP_URL}/${donationAmount}`}
+                  href={`${CASHAPP_URL}/${numericAmount}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full py-3 rounded-xl bg-green-600 text-white text-sm font-semibold text-center"

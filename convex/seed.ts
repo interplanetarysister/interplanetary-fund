@@ -1,208 +1,296 @@
-import { mutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// =====================================================
-// SEED DATA — Initialize agents, campaigns, and fee config
-// Run once after deploying to Convex
-// =====================================================
+// Real agent data from Interplanetary Fund Base44 app
+// 4 built-in agents: strategy, story, growth, communications
+const REAL_AGENTS = [
+  {
+    name: "Strategy Agent",
+    role: "strategy",
+    purpose: "Campaign activation, protocol compliance, milestone planning, and strategic fundraising direction.",
+    description: "Analyzes campaign status, identifies blockers, and recommends activation and compliance actions.",
+    specialization: "Campaign strategy and protocol enforcement",
+    status: "active",
+    trustScore: 90,
+    reliabilityScore: 88,
+    efficiencyScore: 85,
+    collaborationScore: 82,
+    capabilities: ["campaign activation", "protocol compliance", "milestone planning", "goal decomposition"],
+    knowledgeAreas: ["fundraising strategy", "donor psychology", "campaign lifecycle"],
+    responsibilities: ["publish draft campaigns", "ensure protocol compliance", "decompose large goals into milestones"],
+    allowedActions: ["publish_campaign", "set_milestones", "flag_protocol_violations"],
+    restrictedActions: ["delete_campaign", "modify_payments"],
+    permissions: ["read_campaigns", "write_recommendations", "execute_protocol_checks"],
+    toolsAvailable: ["campaign audit", "protocol enforcement", "milestone planner"],
+    workflowAccess: ["campaign", "protocol", "strategy"],
+    dataAccessLevel: "write",
+    approvalRequired: true,
+    accentColor: "#22d3ee",
+    version: 2,
+  },
+  {
+    name: "Story Agent",
+    role: "story",
+    purpose: "Narrative optimization, story versioning, emotional resonance tuning for campaign conversions.",
+    description: "Crafts and refines campaign stories, ensures SEO and accessibility, optimizes for donor conversion.",
+    specialization: "Narrative crafting and conversion optimization",
+    status: "active",
+    trustScore: 80,
+    reliabilityScore: 82,
+    efficiencyScore: 85,
+    collaborationScore: 78,
+    capabilities: ["story optimization", "narrative refinement", "SEO writing", "accessibility compliance"],
+    knowledgeAreas: ["donor psychology", "storytelling", "conversion optimization", "content strategy"],
+    responsibilities: ["refine campaign narratives", "optimize story versions", "ensure SEO and accessibility"],
+    allowedActions: ["update_story", "create_story_versions", "optimize_content"],
+    restrictedActions: ["delete_campaign", "modify_payments"],
+    permissions: ["read_campaigns", "write_stories", "create_recommendations"],
+    toolsAvailable: ["story optimizer", "story versioner"],
+    workflowAccess: ["campaign", "story"],
+    dataAccessLevel: "write",
+    approvalRequired: false,
+    accentColor: "#f472b6",
+    version: 2,
+  },
+  {
+    name: "Growth Agent",
+    role: "growth",
+    purpose: "Donor acquisition, social proof building, seed funding strategy, and revenue growth optimization.",
+    description: "Identifies donor acquisition channels, recommends seed funding strategies, builds social proof.",
+    specialization: "Donor acquisition and revenue growth",
+    status: "active",
+    trustScore: 84,
+    reliabilityScore: 80,
+    efficiencyScore: 82,
+    collaborationScore: 80,
+    capabilities: ["donor acquisition", "social proof strategy", "seed funding", "revenue growth"],
+    knowledgeAreas: ["growth hacking", "social proof", "donor psychology", "fundraising tactics"],
+    responsibilities: ["secure seed donations", "build social proof", "identify growth channels"],
+    allowedActions: ["recommend_seed_donors", "flag_growth_opportunities", "track_revenue"],
+    restrictedActions: ["delete_campaign", "modify_payments"],
+    permissions: ["read_campaigns", "write_recommendations", "track_revenue"],
+    toolsAvailable: ["revenue projector", "growth tracker"],
+    workflowAccess: ["campaign", "growth", "revenue"],
+    dataAccessLevel: "write",
+    approvalRequired: true,
+    accentColor: "#34d399",
+    version: 2,
+  },
+  {
+    name: "Communications Agent",
+    role: "communications",
+    purpose: "Multi-platform outreach, message drafting, social media distribution, and donor engagement.",
+    description: "Generates platform-specific content, manages distributed posts, coordinates outreach across all connected platforms.",
+    specialization: "Multi-platform communications and outreach",
+    status: "active",
+    trustScore: 81,
+    reliabilityScore: 83,
+    efficiencyScore: 86,
+    collaborationScore: 85,
+    capabilities: ["message drafting", "platform-specific content", "social media distribution", "donor outreach"],
+    knowledgeAreas: ["social media", "content marketing", "email outreach", "platform dynamics"],
+    responsibilities: ["generate distributed posts", "coordinate outreach", "manage platform messaging"],
+    allowedActions: ["create_distributed_posts", "schedule_content", "draft_messages"],
+    restrictedActions: ["delete_campaign", "modify_payments", "publish_without_approval"],
+    permissions: ["read_campaigns", "write_posts", "create_recommendations"],
+    toolsAvailable: ["outreach optimizer", "content generator", "platform distributor"],
+    workflowAccess: ["campaign", "communications", "outreach"],
+    dataAccessLevel: "write",
+    approvalRequired: true,
+    accentColor: "#fbbf24",
+    version: 2,
+  },
+];
 
-export const seedAll = mutation({
+// Real campaign data from Interplanetary Fund Base44 app
+// 5 campaigns with actual external platform totals
+const REAL_CAMPAIGNS = [
+  {
+    title: "Running against the wind",
+    status: "draft",
+    category: "disaster_relief",
+    goalAmount: 5000,
+    raisedAmount: 0,
+    donorCount: 0,
+    outreachEnabled: true,
+    paymentActive: false,
+    storyPresent: true,
+    coverImagePresent: true,
+    summary: "",
+    ifCampaignId: "6a6da9072cf99f50edfa0ff6",
+    endDate: "2026-09-30",
+    aiPriority: "emotional",
+    aiTone: "",
+    aiIdealDonors: "Woman's organizations new small business grants small investors",
+    aiInterestedOrgs: "Private investors, Facebook groups",
+    aiPlatforms: "Facebook, Instagram, TikTok, Email",
+    // External platform totals
+    externalRaised: 0,
+    externalDonors: 0,
+    platformCount: 9,
+  },
+  {
+    title: "Random tester",
+    status: "active",
+    category: "creative",
+    goalAmount: 1000,
+    raisedAmount: 0,
+    donorCount: 0,
+    outreachEnabled: true,
+    paymentActive: false,
+    storyPresent: true,
+    coverImagePresent: true,
+    summary: "",
+    ifCampaignId: "6a6d22ddbb0808d7a7678385",
+    endDate: "",
+    aiPriority: "emotional",
+    aiTone: "",
+    aiIdealDonors: "",
+    aiInterestedOrgs: "Facebook groups based around charity",
+    aiPlatforms: "",
+    // External: Patreon $500, 2 donors
+    externalRaised: 500,
+    externalDonors: 2,
+    platformCount: 1,
+  },
+  {
+    title: "Help",
+    status: "active",
+    category: "emergency",
+    goalAmount: 5000,
+    raisedAmount: 0,
+    donorCount: 0,
+    outreachEnabled: true,
+    paymentActive: false,
+    storyPresent: true,
+    coverImagePresent: true,
+    summary: "",
+    ifCampaignId: "6a6d21b7ae792f66e70f4c5d",
+    endDate: "",
+    aiPriority: "emotional",
+    aiTone: "Factual",
+    aiIdealDonors: "",
+    aiInterestedOrgs: "",
+    aiPlatforms: "Facebook",
+    // External: Buy Me a Coffee $9,000, 4 donors
+    externalRaised: 9000,
+    externalDonors: 4,
+    platformCount: 1,
+  },
+  {
+    title: "Woman with a dream",
+    status: "active",
+    category: "business",
+    goalAmount: 50000,
+    raisedAmount: 0,
+    donorCount: 0,
+    outreachEnabled: true,
+    paymentActive: false,
+    storyPresent: true,
+    coverImagePresent: true,
+    summary: "Im seeking help to fund Ai integration for this ai based application and platform.",
+    ifCampaignId: "6a6d189083f8df0b86af5491",
+    endDate: "2027-01-01",
+    aiPriority: "professional",
+    aiTone: "Conversational",
+    aiIdealDonors: "Everyone",
+    aiInterestedOrgs: "Im unsure please help with this.",
+    aiPlatforms: "Facebook, Email, Instagram, LinkedIn",
+    // External: Ko-fi $250, Spotfund $80
+    externalRaised: 330,
+    externalDonors: 0,
+    platformCount: 6,
+  },
+  {
+    title: "Help homeless get a conversion van",
+    status: "draft",
+    category: "housing",
+    goalAmount: 10000,
+    raisedAmount: 0,
+    donorCount: 0,
+    outreachEnabled: true,
+    paymentActive: false,
+    storyPresent: true,
+    coverImagePresent: true,
+    summary: "Housing a homeless person",
+    ifCampaignId: "6a6d219983f8df0b86af5492",
+    endDate: "2026-09-30",
+    aiPriority: "emotional",
+    aiTone: "",
+    aiIdealDonors: "",
+    aiInterestedOrgs: "",
+    aiPlatforms: "",
+    externalRaised: 0,
+    externalDonors: 0,
+    platformCount: 0,
+  },
+];
+
+// Real platform connections from Interplanetary Fund Base44 app
+const REAL_PLATFORMS = [
+  { platform: "bluesky", kind: "social", displayName: "Interplanetaryfund", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "auto" },
+  { platform: "patreon", kind: "crowdfunding", displayName: "Help build our shelter", campaignId: "6a6d22ddbb0808d7a7678385", externalTotal: 500, externalDonorCount: 2, status: "connected", automationMode: "manual" },
+  { platform: "facebook", kind: "social", displayName: "Interplanetary fund", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "auto" },
+  { platform: "kofi", kind: "crowdfunding", displayName: "F", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 250, externalDonorCount: 0, status: "connected", automationMode: "manual" },
+  { platform: "buymeacoffee", kind: "crowdfunding", displayName: "Lady luck in need", campaignId: "6a6d21b7ae792f66e70f4c5d", externalTotal: 9000, externalDonorCount: 4, status: "connected", automationMode: "auto" },
+  { platform: "spotfund", kind: "crowdfunding", displayName: "T", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 80, externalDonorCount: 0, status: "connected", automationMode: "ask" },
+  { platform: "fundrazr", kind: "crowdfunding", displayName: "F", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "ask" },
+  { platform: "indiegogo", kind: "crowdfunding", displayName: "H", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "draft" },
+  { platform: "givesendgo", kind: "crowdfunding", displayName: "Y", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "auto" },
+  { platform: "kickstarter", kind: "crowdfunding", displayName: "Interplanetary fund", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "auto" },
+  { platform: "gofundme", kind: "crowdfunding", displayName: "Interplanetary fund", campaignId: "6a6d189083f8df0b86af5491", externalTotal: 0, externalDonorCount: 0, status: "connected", automationMode: "auto" },
+];
+
+export const seedRealData = mutation({
   args: {},
   handler: async (ctx) => {
-    const results: any = { agents: 0, campaigns: 0, feeConfig: false };
-
-    // SEED 1: Fee Configuration
-    const existingFee = await ctx.db.query("feeConfig").filter((q) => q.eq("active", true)).first();
-    if (!existingFee) {
-      await ctx.db.insert("feeConfig", {
-        platformFeePercent: 5,
-        processingFeePercent: 2.9,
-        processingFeeFlat: 0.30,
-        active: true,
-        updatedBy: "lyra",
-        updatedAt: new Date().toISOString(),
-      });
-      results.feeConfig = true;
-    }
-
-    // SEED 2: 7 Agents
+    // Clear existing data
     const existingAgents = await ctx.db.query("agents").collect();
-    if (existingAgents.length === 0) {
-      const agents = [
-        {
-          name: "Fundraising Agent",
-          role: "fundraising",
-          purpose: "Optimize campaign performance, manage donor outreach, and maximize revenue across all Interplanetary Fund campaigns.",
-          description: "Campaign optimization, donor outreach automation, and revenue maximization specialist.",
-          capabilities: ["campaign optimization", "donor outreach", "revenue tracking", "conversion optimization", "outreach automation"],
-          specialization: "Fundraising and campaign revenue optimization",
-          knowledgeAreas: ["crowdfunding", "donor psychology", "outreach strategy", "social media fundraising"],
-          trustScore: 82, reliabilityScore: 84, efficiencyScore: 85, collaborationScore: 78,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "manage_campaigns"],
-          responsibilities: ["optimize campaign performance", "manage outreach campaigns", "track revenue progress", "identify fundraising opportunities"],
-          toolsAvailable: ["campaign audit", "outreach optimizer", "revenue projector"],
-          allowedActions: ["enable_outreach", "optimize_campaign", "track_revenue", "assign_task"],
-          approvalRequired: true, dataAccessLevel: "write",
-          limitations: ["cannot modify payment integration", "cannot change campaign schema"],
-          restrictedActions: ["delete_campaign", "modify_payments"],
-          workflowAccess: ["campaign", "outreach", "revenue"],
-          managedCampaigns: [],
-          accentColor: "#22d3ee",
-        },
-        {
-          name: "Story Agent",
-          role: "story",
-          purpose: "Generate, optimize, and A/B test AI campaign stories to maximize donor conversion.",
-          description: "AI campaign story generation, optimization, and conversion-focused copywriting.",
-          capabilities: ["story generation", "story optimization", "A/B testing", "SEO optimization", "accessibility compliance"],
-          specialization: "Campaign storytelling and donor conversion",
-          knowledgeAreas: ["copywriting", "donor psychology", "SEO", "accessibility standards", "emotional design"],
-          trustScore: 80, reliabilityScore: 82, efficiencyScore: 83, collaborationScore: 78,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "manage_stories"],
-          responsibilities: ["generate campaign stories", "optimize story content for conversion", "ensure SEO and accessibility compliance"],
-          toolsAvailable: ["story optimizer", "campaign audit"],
-          allowedActions: ["generate_story", "optimize_story", "create_story_version", "flag_story_issue"],
-          approvalRequired: true, dataAccessLevel: "write",
-          limitations: ["cannot publish without approval", "cannot modify campaign structure"],
-          restrictedActions: ["delete_campaign", "change_goal_amount"],
-          workflowAccess: ["campaign", "story"],
-          managedCampaigns: [],
-          accentColor: "#f472b6",
-        },
-        {
-          name: "Donor Relations Agent",
-          role: "donor_relations",
-          purpose: "Manage donor engagement, retention, and communication to build long-term donor relationships.",
-          description: "Donor engagement, retention, and relationship management specialist.",
-          capabilities: ["donor engagement", "retention strategy", "thank-you automation", "donor segmentation", "communication management"],
-          specialization: "Donor relationship management and retention",
-          knowledgeAreas: ["donor psychology", "retention strategies", "communication best practices", "donor segmentation"],
-          trustScore: 81, reliabilityScore: 83, efficiencyScore: 82, collaborationScore: 85,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "manage_donors"],
-          responsibilities: ["manage donor communications", "implement retention strategies", "automate thank-you flows"],
-          toolsAvailable: ["donor pipeline", "outreach optimizer"],
-          allowedActions: ["send_donor_message", "segment_donors", "create_retention_campaign", "flag_donor_issue"],
-          approvalRequired: true, dataAccessLevel: "write",
-          limitations: ["cannot process payments", "cannot modify campaign goals"],
-          restrictedActions: ["delete_donor", "process_refund"],
-          workflowAccess: ["donor", "communication", "retention"],
-          managedCampaigns: [],
-          accentColor: "#4ade80",
-        },
-        {
-          name: "Protocol Agent",
-          role: "protocol",
-          purpose: "Monitor campaign compliance with the Campaign Protocol and enforce standards across all campaigns.",
-          description: "Campaign protocol compliance monitoring and enforcement.",
-          capabilities: ["compliance monitoring", "protocol enforcement", "violation detection", "compliance reporting"],
-          specialization: "Protocol compliance and campaign governance",
-          knowledgeAreas: ["Campaign Protocol P-1 through P-8", "compliance standards", "audit procedures"],
-          trustScore: 90, reliabilityScore: 92, efficiencyScore: 89, collaborationScore: 80,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "audit_campaigns"],
-          responsibilities: ["audit campaigns against protocol", "flag violations", "auto-fix outreach settings", "report compliance status"],
-          toolsAvailable: ["platform health", "campaign audit"],
-          allowedActions: ["audit_campaign", "flag_violation", "auto_fix_outreach", "report_compliance"],
-          approvalRequired: false, dataAccessLevel: "read",
-          limitations: ["can only auto-fix outreach_enabled", "cannot modify stories or payments"],
-          restrictedActions: ["modify_payment", "delete_campaign", "change_goal_amount"],
-          workflowAccess: ["campaign", "protocol", "audit"],
-          managedCampaigns: [],
-          accentColor: "#f87171",
-        },
-        {
-          name: "Analytics Agent",
-          role: "analytics",
-          purpose: "Track revenue, analyze donor data, and generate performance reports for the Interplanetary Fund.",
-          description: "Revenue tracking, donor analytics, and performance reporting.",
-          capabilities: ["revenue tracking", "donor analytics", "performance reporting", "trend analysis", "ROI calculation"],
-          specialization: "Data analysis and revenue intelligence",
-          knowledgeAreas: ["fundraising metrics", "donor analytics", "revenue forecasting", "data visualization"],
-          trustScore: 86, reliabilityScore: 88, efficiencyScore: 87, collaborationScore: 82,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "generate_reports"],
-          responsibilities: ["track campaign revenue", "analyze donor data", "generate weekly reports", "identify revenue trends"],
-          toolsAvailable: ["revenue projector", "revenue audit"],
-          allowedActions: ["generate_report", "track_revenue", "analyze_donors", "flag_trend"],
-          approvalRequired: false, dataAccessLevel: "read",
-          limitations: ["read-only access to campaign data", "cannot modify campaigns"],
-          restrictedActions: ["modify_campaign", "delete_data"],
-          workflowAccess: ["campaign", "revenue", "reporting"],
-          managedCampaigns: [],
-          accentColor: "#a78bfa",
-        },
-        {
-          name: "Treasury Agent",
-          role: "treasury",
-          purpose: "Manage holding accounts, calculate fees, process payouts, and track all fund flows across the Interplanetary Fund platform.",
-          description: "Manages holding accounts, calculates fees, processes payouts via CashApp/Bitcoin/PayPal, and tracks all fund flows.",
-          capabilities: ["fee calculation", "payout processing", "balance tracking", "fund reconciliation", "payout method management"],
-          specialization: "Financial operations, holding accounts, and payout management",
-          knowledgeAreas: ["payment processing", "fee structures", "CashApp API", "PayPal Payouts API", "Bitcoin transactions", "escrow management"],
-          trustScore: 88, reliabilityScore: 90, efficiencyScore: 88, collaborationScore: 80,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "manage_treasury"],
-          responsibilities: ["calculate payout fees (gross to net)", "track holding account balances", "process payout requests", "reconcile fund flows"],
-          toolsAvailable: ["treasury manager", "revenue projector"],
-          allowedActions: ["calculate_payout", "process_payout", "track_balance", "reconcile_funds", "flag_discrepancy"],
-          approvalRequired: true, dataAccessLevel: "write",
-          limitations: ["cannot move funds without approval", "cannot modify fee structure without Michelle's approval"],
-          restrictedActions: ["modify_fee_structure", "approve_payout", "access_external_funds", "delete_transaction"],
-          workflowAccess: ["treasury", "payout", "holding_account"],
-          managedCampaigns: [],
-          accentColor: "#fbbf24",
-        },
-        {
-          name: "Platform Sync Agent",
-          role: "platform_sync",
-          purpose: "Connect external crowdfunding platforms and sync campaign data for real-time dashboard display across all accounts.",
-          description: "Connects external crowdfunding platforms (GoFundMe, Kickstarter, etc.) and syncs campaign data for live dashboard display.",
-          capabilities: ["API connections", "data synchronization", "webhook handling", "balance aggregation", "multi-platform sync"],
-          specialization: "External platform integration and data synchronization",
-          knowledgeAreas: ["GoFundMe API", "Kickstarter", "Facebook Fundraisers", "OAuth flows", "webhook receivers", "API polling"],
-          trustScore: 84, reliabilityScore: 85, efficiencyScore: 86, collaborationScore: 82,
-          permissions: ["read_knowledge", "write_experimental_knowledge", "execute_assigned_tasks", "sync_platforms"],
-          responsibilities: ["sync external platform campaign data", "detect new donations on connected platforms", "aggregate balances across all platforms"],
-          toolsAvailable: ["campaign audit", "platform health"],
-          allowedActions: ["sync_platform_data", "detect_new_donation", "update_campaign_balance", "flag_sync_error", "report_sync_status"],
-          approvalRequired: false, dataAccessLevel: "read",
-          limitations: ["read-only access to external platforms", "cannot process payments", "dependent on platform API availability"],
-          restrictedActions: ["process_payment", "modify_campaign", "delete_connection", "access_user_credentials"],
-          workflowAccess: ["campaign", "platform_sync", "dashboard"],
-          managedCampaigns: [],
-          accentColor: "#34d399",
-        },
-      ];
+    for (const a of existingAgents) await ctx.db.delete(a._id);
+    
+    const existingCampaigns = await ctx.db.query("monitoredCampaigns").collect();
+    for (const c of existingCampaigns) await ctx.db.delete(c._id);
+    
+    const existingPlatforms = await ctx.db.query("externalPlatforms").collect();
+    for (const p of existingPlatforms) await ctx.db.delete(p._id);
 
-      for (const agent of agents) {
-        await ctx.db.insert("agents", {
-          ...agent,
-          workingMemory: [],
-          longTermMemory: [`Created: ${new Date().toISOString().split("T")[0]}. ${agent.purpose}`],
-          tasksCompleted: 0, successfulOutcomes: 0, failedOutcomes: 0,
-          status: "active", version: 1,
-        });
-        results.agents++;
-      }
+    // Seed real agents
+    for (const agent of REAL_AGENTS) {
+      await ctx.db.insert("agents", {
+        ...agent,
+        tasksCompleted: 0,
+        successfulOutcomes: 0,
+        failedOutcomes: 0,
+        longTermMemory: [`Synced from Base44 Interplanetary Fund app: ${new Date().toISOString()}`],
+        workingMemory: [],
+        managedCampaigns: [],
+      });
     }
 
-    // SEED 3: 4 Monitored Campaigns (mirror of IF data)
-    const existingCampaigns = await ctx.db.query("monitoredCampaigns").collect();
-    if (existingCampaigns.length === 0) {
-      const campaigns = [
-        { ifCampaignId: "6a6d22ddbb0808d7a7678385", title: "Random tester", status: "active", goalAmount: 1000, raisedAmount: 0, donorCount: 0, outreachEnabled: true, aiTone: "", aiIdealDonors: "", aiInterestedOrgs: "Facebook groups based around charity", aiPlatforms: "", aiPriority: "emotional", storyPresent: true, summary: "", category: "creative", endDate: "", coverImagePresent: true, paymentActive: false },
-        { ifCampaignId: "6a6d21b7ae792f66e70f4c5d", title: "Help", status: "active", goalAmount: 5000, raisedAmount: 0, donorCount: 0, outreachEnabled: true, aiTone: "Factual", aiIdealDonors: "", aiInterestedOrgs: "", aiPlatforms: "Facebook", aiPriority: "emotional", storyPresent: true, summary: "", category: "emergency", endDate: "", coverImagePresent: true, paymentActive: false },
-        { ifCampaignId: "6a6d189083f8df0b86af5491", title: "Woman with a dream", status: "active", goalAmount: 50000, raisedAmount: 0, donorCount: 0, outreachEnabled: true, aiTone: "Conversational", aiIdealDonors: "Everyone", aiInterestedOrgs: "Im unsure please help with this.", aiPlatforms: "Facebook, Email, Instagram, LinkedIn", aiPriority: "professional", storyPresent: true, summary: "Im seeking help to fund Ai integration for this ai based application and platform.", category: "business", endDate: "2027-01-01", coverImagePresent: true, paymentActive: false },
-        { ifCampaignId: "6a6d219983f8df0b86af5492", title: "Help homeless get a conversion van", status: "draft", goalAmount: 10000, raisedAmount: 0, donorCount: 0, outreachEnabled: true, aiTone: "", aiIdealDonors: "", aiInterestedOrgs: "", aiPlatforms: "", aiPriority: "emotional", storyPresent: true, summary: "Housing a homeless person", category: "housing", endDate: "2026-09-30", coverImagePresent: true, paymentActive: false },
-      ];
+    // Seed real campaigns
+    for (const camp of REAL_CAMPAIGNS) {
+      await ctx.db.insert("monitoredCampaigns", {
+        ...camp,
+        lastSynced: new Date().toISOString(),
+      });
+    }
 
-      for (const c of campaigns) {
-        await ctx.db.insert("monitoredCampaigns", { ...c, lastSynced: new Date().toISOString() });
-        results.campaigns++;
-      }
+    // Seed real platform connections
+    for (const plat of REAL_PLATFORMS) {
+      await ctx.db.insert("externalPlatforms", {
+        ...plat,
+        externalUrl: "",
+        lastSynced: new Date().toISOString(),
+        lastError: "",
+      });
     }
 
     return {
-      status: "success",
-      message: "Seed data initialized",
-      results,
+      agentsSeeded: REAL_AGENTS.length,
+      campaignsSeeded: REAL_CAMPAIGNS.length,
+      platformsSeeded: REAL_PLATFORMS.length,
+      totalExternalRaised: 9830,
+      timestamp: new Date().toISOString(),
     };
   },
 });

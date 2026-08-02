@@ -2,7 +2,8 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // AGENTS — 7 credit-free agent records
+  // AGENTS — 4 real agents from Interplanetary Fund Base44 app
+  // strategy, story, growth, communications
   agents: defineTable({
     name: v.string(),
     role: v.string(),
@@ -35,7 +36,8 @@ export default defineSchema({
     accentColor: v.string(),
   }).index("byRole", ["role"]).index("byStatus", ["status"]),
 
-  // MONITORED CAMPAIGNS — mirror of IF campaign data
+  // MONITORED CAMPAIGNS — mirror of Interplanetary Fund Base44 Campaign entity
+  // 5 real campaigns with full AI profiles and external platform totals
   monitoredCampaigns: defineTable({
     ifCampaignId: v.string(),
     title: v.string(),
@@ -56,6 +58,10 @@ export default defineSchema({
     coverImagePresent: v.boolean(),
     paymentActive: v.boolean(),
     lastSynced: v.string(),
+    // External platform totals (from Base44 PlatformConnection entities)
+    externalRaised: v.number(),
+    externalDonors: v.number(),
+    platformCount: v.number(),
   }).index("byIfId", ["ifCampaignId"]).index("byStatus", ["status"]),
 
   // PROTOCOL REPORTS — persistent audit history
@@ -82,20 +88,22 @@ export default defineSchema({
     syncPerformed: v.boolean(),
   }).index("byDate", ["auditDate"]),
 
-  // EXTERNAL PLATFORMS — connected external crowdfunding accounts
+  // EXTERNAL PLATFORMS — 11 real platform connections from Base44
+  // bluesky, patreon, facebook, kofi, buymeacoffee, spotfund, fundrazr,
+  // indiegogo, givesendgo, kickstarter, gofundme
   externalPlatforms: defineTable({
-    userId: v.string(),
-    platformName: v.string(),
-    campaignUrl: v.string(),
-    campaignTitle: v.string(),
-    raisedAmount: v.number(),
-    goalAmount: v.number(),
-    donorCount: v.number(),
+    platform: v.string(),
+    kind: v.string(), // "social" | "crowdfunding"
+    displayName: v.string(),
+    campaignId: v.string(),
+    externalTotal: v.number(),
+    externalDonorCount: v.number(),
+    status: v.string(), // "connected" | "disconnected" | "error"
+    automationMode: v.string(), // "auto" | "manual" | "ask" | "draft"
+    externalUrl: v.string(),
     lastSynced: v.string(),
-    syncStatus: v.string(),
-    connectionType: v.string(),
-    authToken: v.optional(v.string()),
-  }).index("byUserId", ["userId"]).index("byPlatform", ["platformName"]),
+    lastError: v.string(),
+  }).index("byPlatform", ["platform"]).index("byCampaignId", ["campaignId"]),
 
   // HOLDING ACCOUNTS — user fund balances
   holdingAccounts: defineTable({

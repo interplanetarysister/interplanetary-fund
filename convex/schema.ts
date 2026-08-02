@@ -222,4 +222,17 @@ export default defineSchema({
     error: v.optional(v.string()),
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byGroupId", ["groupId"]).index("byStatus", ["postStatus"]),
+
+  // ACCOUNTS CREATED — tracks all accounts Lyra creates on Michelle's behalf
+  accountsCreated: defineTable({
+    platform: v.string(),        // "facebook", "gofundme", etc.
+    accountEmail: v.string(),    // email used to create the account
+    accountName: v.string(),     // display name or username on the platform
+    purpose: v.string(),         // why the account was created
+    campaignId: v.optional(v.string()), // associated campaign if any
+    credentialsStored: v.boolean(), // whether credentials are in Convex env
+    createdAt: v.string(),
+    reported: v.boolean(),        // whether included in midnight email
+    reportDate: v.optional(v.string()),
+  }).index("byReported", ["reported"]).index("byPlatform", ["platform"]),
 });

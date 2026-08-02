@@ -149,15 +149,14 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byStatus", ["status"]),
 
-  // SUPPORTER INTERACTIONS — tracks views, shares, follows, clicks
-  // Works for ANY campaign, present or future
+  // SUPPORTER INTERACTIONS
   supporterInteractions: defineTable({
     campaignId: v.string(),
     campaignTitle: v.string(),
-    interactionType: v.string(), // "view", "share", "follow", "click", "unfollow"
+    interactionType: v.string(),
     supporterName: v.optional(v.string()),
     supporterId: v.optional(v.string()),
-    metadata: v.optional(v.string()), // JSON string for extra data (platform, etc.)
+    metadata: v.optional(v.string()),
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byType", ["interactionType"]),
 
@@ -170,4 +169,56 @@ export default defineSchema({
     updatedBy: v.string(),
     updatedAt: v.string(),
   }),
+
+  // FACEBOOK CONNECTIONS — user's linked Facebook account
+  facebookConnections: defineTable({
+    userId: v.string(),
+    facebookUserId: v.string(),
+    facebookUserName: v.string(),
+    accessToken: v.string(),
+    permissions: v.array(v.string()),
+    connectedAt: v.string(),
+    status: v.string(), // "active", "disconnected", "expired"
+  }).index("byUserId", ["userId"]).index("byStatus", ["status"]),
+
+  // DISCOVERED FACEBOOK GROUPS — groups the agent found for a campaign
+  facebookGroups: defineTable({
+    campaignId: v.string(),
+    campaignTitle: v.string(),
+    campaignCategory: v.string(),
+    groupFacebookId: v.string(),
+    groupName: v.string(),
+    groupUrl: v.string(),
+    memberCount: v.number(),
+    groupCategory: v.string(),
+    groupDescription: v.string(),
+    relevanceScore: v.number(), // 0-100, how likely this group will donate
+    joinStatus: v.string(), // "discovered", "join_requested", "joined", "rejected", "failed"
+    joinedAt: v.optional(v.string()),
+    canPost: v.boolean(),
+    postsCount: v.number(),
+    lastPostedAt: v.optional(v.string()),
+    lastError: v.optional(v.string()),
+    discoveredAt: v.string(),
+  }).index("byCampaignId", ["campaignId"]).index("byJoinStatus", ["joinStatus"]),
+
+  // FACEBOOK GROUP POSTS — posts made by the agent to groups
+  facebookGroupPosts: defineTable({
+    campaignId: v.string(),
+    campaignTitle: v.string(),
+    groupId: v.string(), // Convex facebookGroups _id
+    groupFacebookId: v.string(),
+    groupName: v.string(),
+    postType: v.string(), // "campaign_launch", "update", "milestone", "reminder", "thank_you"
+    postContent: v.string(),
+    postUrl: v.optional(v.string()),
+    postStatus: v.string(), // "pending", "posted", "failed", "scheduled"
+    scheduledFor: v.optional(v.string()),
+    postedAt: v.optional(v.string()),
+    reactions: v.number(),
+    comments: v.number(),
+    shares: v.number(),
+    error: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("byCampaignId", ["campaignId"]).index("byGroupId", ["groupId"]).index("byStatus", ["postStatus"]),
 });

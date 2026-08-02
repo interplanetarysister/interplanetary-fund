@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
@@ -8,12 +8,15 @@ export default function Explore() {
   const campaigns = useQuery(api.campaigns.getCampaigns, {});
   const balances = useQuery(api.treasury.aggregateBalances, {});
   const recordDonation = useMutation(api.campaigns.recordDonation);
+  const recordInteraction = useMutation(api.interactions.recordInteraction);
+  const bulkActivatePayments = useMutation(api.interactions.activatePaymentsForAll);
 
   const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
   const [donationAmount, setDonationAmount] = useState(25);
   const [donorName, setDonorName] = useState("");
   const [donationMessage, setDonationMessage] = useState("");
   const [donationStep, setDonationStep] = useState<"amount" | "info" | "processing" | "done">("amount");
+  const [viewedCampaigns, setViewedCampaigns] = useState<Set<string>>(new Set());
 
   if (!campaigns || !balances) {
     return (
@@ -24,10 +27,31 @@ export default function Explore() {
   }
 
   const activeCampaigns = campaigns.filter((c: any) => c.status === "active");
-  const totalRaised = balances.grandTotal?.raised || 0;
-  const totalDonors = balances.grandTotal?.donors || 0;
+  const totalRaised = (balances.grandTotal?.raised || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.raisedAmount || 0), 0);
+  const totalDonors = (balances.grandTotal?.donors || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.donorCount || 0), 0);
+
+  const handleCampaignView = (campaign: any) => {
+    // Track view interaction — reusable for any campaign
+    const campaignKey = campaign.ifCampaignId;
+    if (!viewedCampaigns.has(campaignKey)) {
+      setViewedCampaigns(prev => new Set([...prev, campaignKey]));
+      recordInteraction({
+        campaignId: campaign.ifCampaignId,
+        campaignTitle: campaign.title,
+        interactionType: "view",
+      }).catch(() => {}); // silent fail — don't block UX
+    }
+  };
 
   const handleSupport = (campaign: any) => {
+    handleCampaignView(campaign);
+    // Track click interaction
+    recordInteraction({
+      campaignId: campaign.ifCampaignId,
+      campaignTitle: campaign.title,
+      interactionType: "click",
+    }).catch(() => {});
+
     setSelectedCampaign(campaign);
     setDonationAmount(25);
     setDonorName("");
@@ -40,8 +64,22 @@ export default function Explore() {
     setDonationStep("amount");
   };
 
-  const handleContinueToInfo = () => {
-    setDonationStep("info");
+  const handleShare = (campaign: any) => {
+    recordInteraction({
+      campaignId: campaign.ifCampaignId,
+      campaignTitle: campaign.title,
+      interactionType: "share",
+    }).catch(() => {});
+
+    if (navigator.share) {
+      navigator.share({
+        title: campaign.title,
+        text: `Support "${campaign.title}" on Interplanetary Fund!`,
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(window.location.href).catch(() => {});
+    }
   };
 
   const handleCompleteDonation = async () => {
@@ -75,7 +113,7 @@ export default function Explore() {
           <div className="flex-1 h-1.5 bg-ifborder rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-ifaccent to-ifcyan rounded-full"
-              style={{ width: "68%" }}
+              style={{ width: `${totalRaised > 0 ? 68 : 0}%` }}
             />
           </div>
         </div>
@@ -141,13 +179,21 @@ export default function Explore() {
                   </div>
                 </div>
 
-                {/* Support button */}
-                <button
-                  onClick={() => handleSupport(c)}
-                  className="w-full mt-4 py-2.5 rounded-xl bg-ifaccent text-white text-sm font-semibold active:scale-[0.98] transition-transform"
-                >
-                  Support this campaign
-                </button>
+                {/* Action buttons */}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => handleSupport(c)}
+                    className="flex-1 py-2.5 rounded-xl bg-ifaccent text-white text-sm font-semibold active:scale-[0.98] transition-transform"
+                  >
+                    Support
+                  </button>
+                  <button
+                    onClick={() => handleShare(c)}
+                    className="px-3 py-2.5 rounded-xl bg-ifborder text-iftext text-sm font-semibold active:scale-[0.98] transition-transform"
+                  >
+                    Share
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -234,7 +280,7 @@ export default function Explore() {
                 </div>
 
                 <button
-                  onClick={handleContinueToInfo}
+                  onClick={() => setDonationStep("info")}
                   disabled={donationAmount <= 0}
                   className="w-full py-3 rounded-xl bg-ifaccent text-white text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
                 >

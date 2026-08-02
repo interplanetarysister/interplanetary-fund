@@ -2,7 +2,7 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // AGENTS — 4 real agents from Interplanetary Fund Base44 app
+  // AGENTS
   agents: defineTable({
     name: v.string(),
     role: v.string(),
@@ -35,7 +35,7 @@ export default defineSchema({
     accentColor: v.string(),
   }).index("byRole", ["role"]).index("byStatus", ["status"]),
 
-  // MONITORED CAMPAIGNS — mirror of Interplanetary Fund Base44 Campaign entity
+  // MONITORED CAMPAIGNS
   monitoredCampaigns: defineTable({
     ifCampaignId: v.string(),
     title: v.string(),
@@ -137,7 +137,7 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("byUserId", ["userId"]).index("byType", ["type"]),
 
-  // DONATIONS — direct donations through the platform
+  // DONATIONS
   donations: defineTable({
     campaignId: v.string(),
     campaignTitle: v.string(),
@@ -148,6 +148,18 @@ export default defineSchema({
     status: v.string(),
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byStatus", ["status"]),
+
+  // SUPPORTER INTERACTIONS — tracks views, shares, follows, clicks
+  // Works for ANY campaign, present or future
+  supporterInteractions: defineTable({
+    campaignId: v.string(),
+    campaignTitle: v.string(),
+    interactionType: v.string(), // "view", "share", "follow", "click", "unfollow"
+    supporterName: v.optional(v.string()),
+    supporterId: v.optional(v.string()),
+    metadata: v.optional(v.string()), // JSON string for extra data (platform, etc.)
+    createdAt: v.string(),
+  }).index("byCampaignId", ["campaignId"]).index("byType", ["interactionType"]),
 
   // FEE CONFIGURATION
   feeConfig: defineTable({

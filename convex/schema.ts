@@ -3,7 +3,6 @@ import { v } from "convex/values";
 
 export default defineSchema({
   // AGENTS — 4 real agents from Interplanetary Fund Base44 app
-  // strategy, story, growth, communications
   agents: defineTable({
     name: v.string(),
     role: v.string(),
@@ -55,15 +54,15 @@ export default defineSchema({
     category: v.string(),
     endDate: v.string(),
     coverImagePresent: v.boolean(),
+    coverImageUrl: v.optional(v.string()),
     paymentActive: v.boolean(),
     lastSynced: v.string(),
-    // External platform totals (from Base44 PlatformConnection entities)
     externalRaised: v.optional(v.number()),
     externalDonors: v.optional(v.number()),
     platformCount: v.optional(v.number()),
   }).index("byIfId", ["ifCampaignId"]).index("byStatus", ["status"]),
 
-  // PROTOCOL REPORTS — persistent audit history
+  // PROTOCOL REPORTS
   protocolReports: defineTable({
     reportType: v.string(),
     auditDate: v.string(),
@@ -87,7 +86,7 @@ export default defineSchema({
     syncPerformed: v.boolean(),
   }).index("byDate", ["auditDate"]),
 
-  // EXTERNAL PLATFORMS — 11 real platform connections from Base44
+  // EXTERNAL PLATFORMS
   externalPlatforms: defineTable({
     platform: v.string(),
     kind: v.string(),
@@ -137,6 +136,18 @@ export default defineSchema({
     status: v.string(),
     createdAt: v.string(),
   }).index("byUserId", ["userId"]).index("byType", ["type"]),
+
+  // DONATIONS — direct donations through the platform
+  donations: defineTable({
+    campaignId: v.string(),
+    campaignTitle: v.string(),
+    amount: v.number(),
+    donorName: v.string(),
+    message: v.optional(v.string()),
+    paymentMethod: v.string(),
+    status: v.string(),
+    createdAt: v.string(),
+  }).index("byCampaignId", ["campaignId"]).index("byStatus", ["status"]),
 
   // FEE CONFIGURATION
   feeConfig: defineTable({

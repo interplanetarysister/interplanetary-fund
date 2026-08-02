@@ -11,10 +11,67 @@ export const getCampaigns = query({
   handler: async (ctx, { status }) => {
     if (status) {
       return await ctx.db.query("monitoredCampaigns")
-        .filter((q) => q.eq("status", status))
+        .withIndex("byStatus", (q) => q.eq("status", status))
         .collect();
     }
     return await ctx.db.query("monitoredCampaigns").collect();
+  },
+});
+
+// Mutation: Update campaign cover image
+export const updateCoverImage = mutation({
+  args: {
+    ifCampaignId: v.string(),
+    coverImageUrl: v.string(),
+  },
+  handler: async (ctx, { ifCampaignId, coverImageUrl }) => {
+    const existing = await ctx.db.query("monitoredCampaigns")
+      .withIndex("byIfId", (q) => q.eq("ifCampaignId", ifCampaignId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        coverImageUrl,
+        coverImagePresent: true,
+        lastSynced: new Date().toISOString(),
+      });
+      return { status: "updated", campaignId: existing._id };
+    }
+    return { status: "not_found", ifCampaignId };
+  },
+});
+
+// Mutation: Record a donation
+export const recordDonation = mutation({
+  args: {
+    campaignId: v.string(),
+    campaignTitle: v.string(),
+    amount: v.number(),
+    donorName: v.string(),
+    message: v.optional(v.string()),
+    paymentMethod: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const donationId = await ctx.db.insert("donations", {
+      ...args,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    });
+
+    // Update campaign raised amount and donor count
+    const campaign = await ctx.db.query("monitoredCampaigns")
+      .withIndex("byIfId", (q) => q.eq("ifCampaignId", args.campaignId))
+      .first();
+
+    if (campaign) {
+      await ctx.db.patch(campaign._id, {
+        raisedAmount: campaign.raisedAmount + args.amount,
+        donorCount: campaign.donorCount + 1,
+        lastSynced: new Date().toISOString(),
+      });
+    }
+
+    return { status: "success", donationId };
   },
 });
 
@@ -41,9 +98,8 @@ export const syncCampaign = mutation({
     paymentActive: v.boolean(),
   },
   handler: async (ctx, args) => {
-    // Check if campaign already exists in mirror
     const existing = await ctx.db.query("monitoredCampaigns")
-      .filter((q) => q.eq("ifCampaignId", args.ifCampaignId))
+      .withIndex("byIfId", (q) => q.eq("ifCampaignId", args.ifCampaignId))
       .first();
 
     if (existing) {
@@ -92,7 +148,7 @@ export const bulkSyncCampaigns = mutation({
 
     for (const c of campaigns) {
       const existing = await ctx.db.query("monitoredCampaigns")
-        .filter((q) => q.eq("ifCampaignId", c.ifCampaignId))
+        .withIndex("byIfId", (q) => q.eq("ifCampaignId", c.ifCampaignId))
         .first();
 
       if (existing) {
@@ -108,11 +164,23 @@ export const bulkSyncCampaigns = mutation({
   },
 });
 
+// Query: Get donations for a campaign
+export const getDonations = query({
+  args: { campaignId: v.optional(v.string()) },
+  handler: async (ctx, { campaignId }) => {
+    if (campaignId) {
+      return await ctx.db.query("donations")
+        .withIndex("byCampaignId", (q) => q.eq("campaignId", campaignId))
+        .collect();
+    }
+    return await ctx.db.query("donations").collect();
+  },
+});
+
 // =====================================================
 // EXTERNAL PLATFORM CONNECTIONS
 // =====================================================
 
-// Query: Get all external platforms for a user
 export const getExternalPlatforms = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
@@ -122,7 +190,6 @@ export const getExternalPlatforms = query({
   },
 });
 
-// Mutation: Connect an external platform
 export const connectExternalPlatform = mutation({
   args: {
     userId: v.string(),
@@ -145,7 +212,6 @@ export const connectExternalPlatform = mutation({
   },
 });
 
-// Mutation: Update external platform sync data
 export const updateExternalPlatformSync = mutation({
   args: {
     platformId: v.id("externalPlatforms"),
@@ -166,7 +232,6 @@ export const updateExternalPlatformSync = mutation({
   },
 });
 
-// Query: Get all external platform balances (for dashboard)
 export const getAllExternalBalances = query({
   args: {},
   handler: async (ctx) => {

@@ -33,7 +33,7 @@ export const recordMigration = mutation({
     // Update campaign totals
     const campaign = await ctx.db
       .query("monitoredCampaigns")
-      .filter((q) => q.eq("ifCampaignId", args.campaignId))
+      .withIndex("byIfId", (q) => q.eq("ifCampaignId", args.campaignId))
       .first();
 
     if (campaign) {

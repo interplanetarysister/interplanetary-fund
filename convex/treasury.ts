@@ -105,8 +105,8 @@ export const aggregateBalances = query({
     const localTotalGoal = campaigns.reduce((s, c) => s + (c.goalAmount || 0), 0);
     const localTotalDonors = campaigns.reduce((s, c) => s + (c.donorCount || 0), 0);
 
-    const externalTotalRaised = externalPlatforms.reduce((s, p) => s + (p.raisedAmount || 0), 0);
-    const externalTotalDonors = externalPlatforms.reduce((s, p) => s + (p.donorCount || 0), 0);
+    const externalTotalRaised = externalPlatforms.reduce((s, p) => s + (p.externalTotal || 0), 0);
+    const externalTotalDonors = externalPlatforms.reduce((s, p) => s + (p.externalDonorCount || 0), 0);
 
     const totalHeld = holdingAccounts.reduce((s, a) => s + (a.totalBalance || 0), 0);
     const totalPaidOut = holdingAccounts.reduce((s, a) => s + (a.totalPaidOut || 0), 0);
@@ -126,7 +126,7 @@ export const aggregateBalances = query({
         totalRaised: externalTotalRaised,
         totalDonors: externalTotalDonors,
         byPlatform: externalPlatforms.reduce((acc, p) => {
-          acc[p.platformName] = (acc[p.platformName] || 0) + p.raisedAmount;
+          acc[p.platform] = (acc[p.platform] || 0) + (p.externalTotal || 0);
           return acc;
         }, {} as Record<string, number>),
       },

@@ -61,7 +61,7 @@ export const confirmDonation = mutation({
     // Update campaign raised amount
     const campaign = await ctx.db
       .query("monitoredCampaigns")
-      .filter((q) => q.eq("ifCampaignId", donation.campaignId))
+      .withIndex("byIfId", (q) => q.eq("ifCampaignId", donation.campaignId))
       .first();
 
     if (campaign) {

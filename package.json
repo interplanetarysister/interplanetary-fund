@@ -1,0 +1,19 @@
+{
+  "name": "interplanetary-fund-backend",
+  "version": "1.0.0",
+  "description": "Credit-free backend for Interplanetary Fund — agents, protocol enforcement, treasury management, and external platform sync. Independent of Base44 credits.",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "dashboard": "convex dashboard"
+  },
+  "dependencies": {
+    "convex": "^1.43.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "keywords": ["interplanetary-fund", "agents", "protocol", "treasury", "convex"],
+  "license": "MIT"
+}

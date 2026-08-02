@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 const PRESET_AMOUNTS = [5, 10, 25, 50];
+const CASHAPP_TAG = "unrewound";
+const CASHAPP_URL = `https://cash.app/$${CASHAPP_TAG}`;
 
 export default function Explore() {
   const campaigns = useQuery(api.campaigns.getCampaigns, {});
   const balances = useQuery(api.treasury.aggregateBalances, {});
   const recordDonation = useMutation(api.campaigns.recordDonation);
   const recordInteraction = useMutation(api.interactions.recordInteraction);
-  const bulkActivatePayments = useMutation(api.interactions.activatePaymentsForAll);
 
   const [selectedCampaign, setSelectedCampaign] = useState<any | null>(null);
   const [donationAmount, setDonationAmount] = useState(25);
@@ -31,7 +32,6 @@ export default function Explore() {
   const totalDonors = (balances.grandTotal?.donors || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.donorCount || 0), 0);
 
   const handleCampaignView = (campaign: any) => {
-    // Track view interaction — reusable for any campaign
     const campaignKey = campaign.ifCampaignId;
     if (!viewedCampaigns.has(campaignKey)) {
       setViewedCampaigns(prev => new Set([...prev, campaignKey]));
@@ -39,13 +39,12 @@ export default function Explore() {
         campaignId: campaign.ifCampaignId,
         campaignTitle: campaign.title,
         interactionType: "view",
-      }).catch(() => {}); // silent fail — don't block UX
+      }).catch(() => {});
     }
   };
 
   const handleSupport = (campaign: any) => {
     handleCampaignView(campaign);
-    // Track click interaction
     recordInteraction({
       campaignId: campaign.ifCampaignId,
       campaignTitle: campaign.title,
@@ -86,6 +85,7 @@ export default function Explore() {
     if (!selectedCampaign) return;
     setDonationStep("processing");
     try {
+      // Record the donation in Convex
       await recordDonation({
         campaignId: selectedCampaign.ifCampaignId,
         campaignTitle: selectedCampaign.title,
@@ -94,6 +94,12 @@ export default function Explore() {
         message: donationMessage || undefined,
         paymentMethod: "cashapp",
       });
+
+      // Redirect to CashApp with the amount pre-filled
+      // CashApp URL format: https://cash.app/$tag/amount
+      const cashappPayUrl = `${CASHAPP_URL}/${donationAmount}`;
+      window.open(cashappPayUrl, "_blank");
+
       setDonationStep("done");
     } catch (e) {
       setDonationStep("amount");
@@ -136,7 +142,6 @@ export default function Explore() {
 
             return (
               <div key={c._id} className="card overflow-hidden">
-                {/* Campaign cover image */}
                 <div className="h-40 -mx-4 -mt-4 mb-3 overflow-hidden relative">
                   {c.coverImageUrl ? (
                     <img
@@ -151,13 +156,11 @@ export default function Explore() {
                   )}
                 </div>
 
-                {/* Title & summary */}
                 <h4 className="text-sm font-semibold text-iftext">{c.title}</h4>
                 {c.summary && (
                   <p className="text-xs text-ifmuted mt-1 line-clamp-2">{c.summary}</p>
                 )}
 
-                {/* Progress */}
                 <div className="mt-3">
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-iftext font-medium">
@@ -179,7 +182,6 @@ export default function Explore() {
                   </div>
                 </div>
 
-                {/* Action buttons */}
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={() => handleSupport(c)}
@@ -212,11 +214,8 @@ export default function Explore() {
         </div>
       </div>
 
-      {/* Footer note */}
       <div className="text-center py-4">
-        <p className="text-[10px] text-ifmuted">
-          Every dollar makes a difference
-        </p>
+        <p className="text-[10px] text-ifmuted">Every dollar makes a difference</p>
       </div>
 
       {/* Donation Modal */}
@@ -225,15 +224,12 @@ export default function Explore() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           onClick={handleCloseModal}
         >
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-          {/* Modal content */}
           <div
             className="relative w-full max-w-md bg-ifcard rounded-t-3xl sm:rounded-3xl border border-ifborder p-6 space-y-4 animate-in"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
             <button
               onClick={handleCloseModal}
               className="absolute top-3 right-3 w-8 h-8 rounded-full bg-ifborder flex items-center justify-center text-ifmuted text-lg"
@@ -323,14 +319,20 @@ export default function Explore() {
                 </div>
 
                 <div className="pt-2 border-t border-ifborder">
-                  <p className="text-[10px] text-ifmuted mb-3">
-                    Payment method: CashApp. You'll be redirected to complete your donation.
-                  </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                      <span className="text-sm">$$</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-iftext">Pay with CashApp</p>
+                      <p className="text-[10px] text-ifmuted">Tapping donate opens CashApp to complete payment</p>
+                    </div>
+                  </div>
                   <button
                     onClick={handleCompleteDonation}
-                    className="w-full py-3 rounded-xl bg-ifaccent text-white text-sm font-semibold active:scale-[0.98] transition-transform"
+                    className="w-full py-3 rounded-xl bg-green-600 text-white text-sm font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
                   >
-                    Donate ${donationAmount}
+                    Donate ${donationAmount} via CashApp
                   </button>
                 </div>
               </>
@@ -340,7 +342,7 @@ export default function Explore() {
             {donationStep === "processing" && (
               <div className="py-8 text-center">
                 <div className="w-10 h-10 border-2 border-ifaccent border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-ifmuted mt-3">Processing your donation...</p>
+                <p className="text-sm text-ifmuted mt-3">Opening CashApp...</p>
               </div>
             )}
 
@@ -355,7 +357,18 @@ export default function Explore() {
                   <p className="text-sm text-ifmuted mt-1">
                     Your ${donationAmount} donation to "{selectedCampaign.title}" has been recorded.
                   </p>
+                  <p className="text-[10px] text-ifmuted mt-2">
+                    Complete your payment in CashApp if it didn't open automatically.
+                  </p>
                 </div>
+                <a
+                  href={`${CASHAPP_URL}/${donationAmount}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-3 rounded-xl bg-green-600 text-white text-sm font-semibold text-center"
+                >
+                  Open CashApp
+                </a>
                 <button
                   onClick={handleCloseModal}
                   className="w-full py-3 rounded-xl bg-ifborder text-iftext text-sm font-semibold"

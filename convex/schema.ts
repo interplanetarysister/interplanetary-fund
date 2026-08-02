@@ -225,14 +225,23 @@ export default defineSchema({
 
   // ACCOUNTS CREATED — tracks all accounts Lyra creates on Michelle's behalf
   accountsCreated: defineTable({
-    platform: v.string(),        // "facebook", "gofundme", etc.
-    accountEmail: v.string(),    // email used to create the account
-    accountName: v.string(),     // display name or username on the platform
-    purpose: v.string(),         // why the account was created
-    campaignId: v.optional(v.string()), // associated campaign if any
-    credentialsStored: v.boolean(), // whether credentials are in Convex env
+    platform: v.string(),
+    accountEmail: v.string(),
+    accountName: v.string(),
+    purpose: v.string(),
+    campaignId: v.optional(v.string()),
+    credentialsStored: v.boolean(),
     createdAt: v.string(),
-    reported: v.boolean(),        // whether included in midnight email
+    reported: v.boolean(),
     reportDate: v.optional(v.string()),
   }).index("byReported", ["reported"]).index("byPlatform", ["platform"]),
+
+  // SPAM BLOCKLIST — groups or users that asked to stop or were flagged
+  spamBlocklist: defineTable({
+    identifier: v.string(),
+    identifierType: v.string(),
+    reason: v.string(),
+    platform: v.string(),
+    blockedAt: v.string(),
+  }).index("byIdentifier", ["identifier"]).index("byPlatform", ["platform"]),
 });

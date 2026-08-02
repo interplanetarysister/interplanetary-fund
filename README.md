@@ -1,96 +1,116 @@
-# Interplanetary Fund — Credit-Free Backend
+# Interplanetary Fund — Full-Stack Credit-Free App
 
-Independent backend for the Interplanetary Fund platform. Built on Convex — runs entirely outside Base44's credit system.
+Complete frontend + backend for the Interplanetary Fund platform. Runs entirely on Convex — zero Base44 credits.
 
-## What This Is
+## Quick Start
 
-This is the agent infrastructure, protocol enforcement, and treasury management system for the Interplanetary Fund. It was designed by Lyra (Chief of Staff for Agents) under directive from Michelle Rogers to operate with **zero recurring credits** on any platform.
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start Convex backend (creates local deployment + .env.local)
+npx convex dev
+
+# 3. In another terminal, seed the database
+npx convex run seed:seedAll
+
+# 4. Start the frontend
+npm run dev
+```
+
+## Deploy to Convex Cloud
+
+```bash
+# 1. Login to Convex (opens browser)
+npx convex login
+
+# 2. Link to cloud project
+npx convex dev
+
+# 3. Deploy to production
+npx convex deploy
+```
 
 ## Architecture
 
 ```
 interplanetary-fund-backend/
-├── convex/
-│   ├── schema.ts        — 8 tables: agents, campaigns, reports, platforms, holding accounts, payouts, transactions, fees
-│   ├── protocol.ts      — Protocol enforcement (P-1 through P-8) + weekly training + reports
-│   ├── treasury.ts     — Fee calculation, deposits, payouts, batch payouts, balance aggregation
-│   ├── agents.ts        — Agent CRUD, memory updates, task tracking, campaign assignment
-│   ├── campaigns.ts     — Campaign sync, external platform connections, live balance dashboard
-│   └── crons.ts         — Scheduled jobs (daily 6am audit, weekly Saturday 2am training)
+├── convex/                    # Backend (Convex functions)
+│   ├── schema.ts             # 8 tables
+│   ├── protocol.ts           # P-1 through P-8 enforcement
+│   ├── treasury.ts           # Fee calculation, deposits, payouts
+│   ├── agents.ts             # Agent CRUD and memory
+│   ├── campaigns.ts          # Campaign sync + external platforms
+│   ├── crons.ts              # Scheduled jobs (daily + weekly)
+│   └── seed.ts               # One-click seed (7 agents + 4 campaigns)
+├── src/                       # Frontend (React + Vite + Tailwind)
+│   ├── main.tsx              # App entry with Convex provider
+│   ├── App.tsx               # Shell with bottom navigation
+│   ├── index.css             # Tailwind + custom styles
+│   └── pages/
+│       ├── Dashboard.tsx     # Revenue, campaigns, agents, audit overview
+│       ├── Campaigns.tsx     # List with compliance badges + progress
+│       ├── Agents.tsx        # 7 agent profiles with live memory
+│       ├── Treasury.tsx      # Fee calculator, deposits, payouts
+│       ├── Platforms.tsx     # External platform connections
+│       └── Reports.tsx       # Protocol audit history
+├── index.html
 ├── package.json
-├── tsconfig.json
-└── README.md
+├── vite.config.ts
+├── tailwind.config.js
+└── tsconfig.json
 ```
 
 ## Tables
 
-| Table | Purpose |
-|-------|---------|
-| `agents` | 7 agent profiles with memory, scores, capabilities, managed campaigns |
-| `monitoredCampaigns` | Mirror of Interplanetary Fund campaign data for credit-free auditing |
-| `protocolReports` | Persistent audit history with compliance scores and violations |
-| `externalPlatforms` | Connected external crowdfunding accounts (GoFundMe, Kickstarter, etc.) |
-| `holdingAccounts` | User fund balances (gross display, fee tracking) |
-| `payoutRequests` | Cashout requests with fee breakdown and payout method |
-| `transactions` | All fund movements (deposits, payouts, fees) |
-| `feeConfig` | Platform fee configuration (defaults: 5% platform, 2.9% + $0.30 processing) |
-
-## Agents
-
-| # | Agent | Role | Purpose |
-|---|-------|------|---------|
-| 1 | Fundraising Agent | fundraising | Campaign optimization, donor outreach, revenue maximization |
-| 2 | Story Agent | story | AI campaign story generation, optimization, A/B testing |
-| 3 | Donor Relations Agent | donor_relations | Donor engagement, retention, thank-you automation |
-| 4 | Protocol Agent | protocol | Campaign compliance monitoring, protocol enforcement |
-| 5 | Analytics Agent | analytics | Revenue tracking, donor analytics, performance reporting |
-| 6 | Treasury Agent | treasury | Holding accounts, fee calculation, payout processing |
-| 7 | Platform Sync Agent | platform_sync | External platform connections, live data sync |
-
-## Protocol Standards
-
-| ID | Standard | Status |
-|----|----------|--------|
-| P-1 | Outreach enabled on ALL campaigns | ✅ Enforced |
-| P-2 | AI profile complete (tone, donors, orgs, platforms) | ⚠️ Flagged |
-| P-3 | Story present with SEO + accessibility | ✅ Enforced |
-| P-4 | Payment path functional on active campaigns | ❌ Critical blocker |
-| P-5 | Required fields complete | ⚠️ Flagged |
-| P-6 | Agent assigned to each campaign | ✅ 7 agents active |
-| P-7 | External platform sync | ⏳ Pending Builder AI |
-| P-8 | Fund migration & holding account | ⏳ Fee logic ready |
+| Table | Records | Purpose |
+|-------|---------|---------|
+| agents | 7 | Fundraising, Story, Donor Relations, Protocol, Analytics, Treasury, Platform Sync |
+| monitoredCampaigns | 4 | Mirror of IF campaign data |
+| protocolReports | auto | Audit history (created by weekly cron) |
+| externalPlatforms | 0 | Connected GoFundMe/Kickstarter/Facebook accounts |
+| holdingAccounts | 0 | User fund balances (gross display) |
+| payoutRequests | 0 | Cashout requests with fee breakdown |
+| transactions | 0 | All fund movements |
+| feeConfig | 1 | Platform fee: 5%, Processing: 2.9% + $0.30 |
 
 ## Fee Model
 
 ```
 Available Balance: $5,000.00  (gross — what user sees)
-You Will Receive:  $4,605.00  (net — shown on cashout)
-Our Fee:           $395.00   (5% platform + 2.9% + $0.30 processing)
+You Will Receive:  $4,604.70  (net — shown on cashout)
+Our Fee:           $395.30   (5% platform + 2.9% + $0.30 processing)
 ```
 
-Fees are calculated at **payout time**, not at deposit time. Users see their gross balance until they cash out.
+## Scheduled Jobs
 
-## Getting Started
+| Job | Schedule (UTC) | What it does |
+|-----|---------------|--------------|
+| daily-protocol-enforcement | 13:00 daily (6am PT) | Audit all campaigns against P-1 through P-8 |
+| weekly-training-session | Sat 09:00 (2am PT) | Full audit + update agent memory + create report |
 
-```bash
-# Install dependencies
-npm install
+## Agents
 
-# Set up Convex (requires Convex account)
-npx convex dev
-
-# Deploy to production
-npx convex deploy
-
-# View dashboard
-npx convex dashboard
-```
+| Agent | Role | Trust | Purpose |
+|-------|------|-------|---------|
+| Fundraising Agent | fundraising | 82 | Campaign optimization, donor outreach |
+| Story Agent | story | 80 | AI story generation, optimization |
+| Donor Relations Agent | donor_relations | 81 | Donor engagement, retention |
+| Protocol Agent | protocol | 90 | Compliance monitoring, enforcement |
+| Analytics Agent | analytics | 86 | Revenue tracking, reporting |
+| Treasury Agent | treasury | 88 | Holding accounts, fee calculation, payouts |
+| Platform Sync Agent | platform_sync | 84 | External platform connections, live sync |
 
 ## Credits
 
-- **Convex:** Free tier covers development. Paid plan for production scale.
-- **Base44:** Zero recurring credits. Builder AI only contacted for UI/architecture changes (rare, manual).
+- **Convex:** Free tier for development. Paid plan for production.
+- **Base44:** Zero recurring credits.
 - **LLM:** Zero recurring credits. All enforcement runs as code.
+
+## GitHub
+
+Repo: `interplanetarysister/interplanetary-fund-backend` (private)
+URL: https://github.com/interplanetarysister/interplanetary-fund-backend
 
 ## Authority
 

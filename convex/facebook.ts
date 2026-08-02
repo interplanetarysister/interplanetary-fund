@@ -4,7 +4,77 @@ import { v } from "convex/values";
 // =====================================================
 // FACEBOOK GROUP OUTREACH SYSTEM
 // Agent discovers, joins, and posts to relevant FB groups
+// ANTI-SPAM GUARDRAILS enforced on every post creation
 // =====================================================
+
+// ---- ANTI-SPAM CONSTANTS (mirrored from antiSpam.ts) ----
+const COOLDOWN_HOURS = 48;
+const MAX_POSTS_PER_DAY = 3;
+const SIMILARITY_THRESHOLD = 0.8;
+
+// Inline anti-spam check — runs before ANY post is created
+async function runSpamChecks(
+  ctx: any,
+  campaignId: string,
+  groupId: string,
+  content: string
+): Promise<{ canPost: boolean; blocks: string[] }> {
+  const blocks: string[] = [];
+
+  // 1. Check blocklist
+  const blocklist = await ctx.db.query("spamBlocklist").collect();
+  const group = await ctx.db.get(groupId as any);
+  if (group) {
+    const blocked = blocklist.find((b: any) => b.identifier === group.groupFacebookId);
+    if (blocked) {
+      blocks.push(`Group is on blocklist: ${blocked.reason}`);
+    }
+  }
+
+  // 2. Group cooldown check
+  if (group && group.lastPostedAt) {
+    const hoursSince = (Date.now() - new Date(group.lastPostedAt).getTime()) / (1000 * 60 * 60);
+    if (hoursSince < COOLDOWN_HOURS) {
+      blocks.push(`Group in cooldown for ${Math.ceil(COOLDOWN_HOURS - hoursSince)} more hours`);
+    }
+  }
+
+  // 3. Daily post limit check
+  const today = new Date().toISOString().split("T")[0];
+  const campaignPosts = await ctx.db
+    .query("facebookGroupPosts")
+    .withIndex("byCampaignId", (q: any) => q.eq("campaignId", campaignId))
+    .collect();
+
+  const todayPosts = campaignPosts.filter(
+    (p: any) => p.postStatus === "posted" && p.postedAt && p.postedAt.startsWith(today)
+  );
+  if (todayPosts.length >= MAX_POSTS_PER_DAY) {
+    blocks.push(`Daily limit reached: ${todayPosts.length}/${MAX_POSTS_PER_DAY} posts today`);
+  }
+
+  // 4. Duplicate content check
+  const normalizedNew = content.toLowerCase().replace(/\s+/g, " ").trim();
+  const recentPosts = campaignPosts
+    .filter((p: any) => p.postStatus === "posted" || p.postStatus === "pending")
+    .sort((a: any, b: any) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+    .slice(0, 5);
+
+  for (const post of recentPosts) {
+    const normalizedOld = post.postContent.toLowerCase().replace(/\s+/g, " ").trim();
+    const newWords = new Set(normalizedNew.split(" "));
+    const oldWords = new Set(normalizedOld.split(" "));
+    let common = 0;
+    for (const word of newWords) if (oldWords.has(word)) common++;
+    const similarity = common / Math.max(newWords.size, oldWords.size, 1);
+    if (similarity >= SIMILARITY_THRESHOLD) {
+      blocks.push(`Content too similar to a recent post (${Math.round(similarity * 100)}% match) — write something different`);
+      break;
+    }
+  }
+
+  return { canPost: blocks.length === 0, blocks };
+}
 
 // ---- FACEBOOK CONNECTION MANAGEMENT ----
 
@@ -18,7 +88,6 @@ export const connectFacebook = mutation({
     permissions: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    // Check if already connected
     const existing = await ctx.db.query("facebookConnections")
       .withIndex("byUserId", (q) => q.eq("userId", args.userId))
       .first();
@@ -78,8 +147,6 @@ export const disconnectFacebook = mutation({
 // ---- GROUP DISCOVERY ----
 
 // Mutation: Store discovered groups for a campaign
-// The agent searches FB groups based on campaign category + keywords
-// and stores the results with relevance scores
 export const discoverGroups = mutation({
   args: {
     campaignId: v.string(),
@@ -102,14 +169,12 @@ export const discoverGroups = mutation({
     const now = new Date().toISOString();
 
     for (const g of groups) {
-      // Check if already discovered for this campaign
       const existing = await ctx.db.query("facebookGroups")
         .withIndex("byCampaignId", (q) => q.eq("campaignId", campaignId))
         .filter((q) => q.eq("groupFacebookId", g.groupFacebookId))
         .first();
 
       if (existing) {
-        // Update relevance score if higher
         if (g.relevanceScore > existing.relevanceScore) {
           await ctx.db.patch(existing._id, { relevanceScore: g.relevanceScore });
         }
@@ -136,12 +201,7 @@ export const discoverGroups = mutation({
       created++;
     }
 
-    return {
-      status: "success",
-      discovered: created,
-      skipped,
-      total: groups.length,
-    };
+    return { status: "success", discovered: created, skipped, total: groups.length };
   },
 });
 
@@ -152,10 +212,9 @@ export const getDiscoveredGroups = query({
     joinStatus: v.optional(v.string()),
   },
   handler: async (ctx, { campaignId, joinStatus }) => {
-    let q = ctx.db.query("facebookGroups")
-      .withIndex("byCampaignId", (q) => q.eq("campaignId", campaignId));
-
-    const groups = await q.collect();
+    const groups = await ctx.db.query("facebookGroups")
+      .withIndex("byCampaignId", (q) => q.eq("campaignId", campaignId))
+      .collect();
 
     if (joinStatus) {
       return groups.filter((g) => g.joinStatus === joinStatus);
@@ -183,11 +242,8 @@ export const getAllDiscoveredGroups = query({
 
 // ---- GROUP JOIN MANAGEMENT ----
 
-// Mutation: Request to join a group (agent action)
 export const requestJoinGroup = mutation({
-  args: {
-    groupId: v.id("facebookGroups"),
-  },
+  args: { groupId: v.id("facebookGroups") },
   handler: async (ctx, { groupId }) => {
     const group = await ctx.db.get(groupId);
     if (!group) return { status: "not_found" };
@@ -197,19 +253,12 @@ export const requestJoinGroup = mutation({
       lastError: undefined,
     });
 
-    return {
-      status: "requested",
-      groupName: group.groupName,
-      groupUrl: group.groupUrl,
-    };
+    return { status: "requested", groupName: group.groupName, groupUrl: group.groupUrl };
   },
 });
 
-// Mutation: Bulk request join for multiple groups
 export const bulkRequestJoin = mutation({
-  args: {
-    groupIds: v.array(v.id("facebookGroups")),
-  },
+  args: { groupIds: v.array(v.id("facebookGroups")) },
   handler: async (ctx, { groupIds }) => {
     let requested = 0;
     let failed = 0;
@@ -231,11 +280,8 @@ export const bulkRequestJoin = mutation({
   },
 });
 
-// Mutation: Confirm group joined (after FB approves the join request)
 export const confirmGroupJoined = mutation({
-  args: {
-    groupId: v.id("facebookGroups"),
-  },
+  args: { groupId: v.id("facebookGroups") },
   handler: async (ctx, { groupId }) => {
     const group = await ctx.db.get(groupId);
     if (!group) return { status: "not_found" };
@@ -246,18 +292,12 @@ export const confirmGroupJoined = mutation({
       canPost: true,
     });
 
-    return {
-      status: "joined",
-      groupName: group.groupName,
-    };
+    return { status: "joined", groupName: group.groupName };
   },
 });
 
-// Mutation: Bulk confirm joined
 export const bulkConfirmJoined = mutation({
-  args: {
-    groupIds: v.array(v.id("facebookGroups")),
-  },
+  args: { groupIds: v.array(v.id("facebookGroups")) },
   handler: async (ctx, { groupIds }) => {
     let joined = 0;
     const now = new Date().toISOString();
@@ -278,7 +318,6 @@ export const bulkConfirmJoined = mutation({
   },
 });
 
-// Mutation: Mark group as rejected or failed
 export const updateGroupJoinStatus = mutation({
   args: {
     groupId: v.id("facebookGroups"),
@@ -286,17 +325,15 @@ export const updateGroupJoinStatus = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, { groupId, joinStatus, error }) => {
-    await ctx.db.patch(groupId, {
-      joinStatus,
-      lastError: error,
-    });
+    await ctx.db.patch(groupId, { joinStatus, lastError: error });
     return { status: "updated" };
   },
 });
 
-// ---- POST MANAGEMENT ----
+// ---- POST MANAGEMENT (WITH ENFORCED ANTI-SPAM CHECKS) ----
 
 // Mutation: Create a scheduled post for a group
+// Runs ALL anti-spam checks before allowing creation
 export const createGroupPost = mutation({
   args: {
     campaignId: v.string(),
@@ -309,6 +346,16 @@ export const createGroupPost = mutation({
     scheduledFor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // RUN ANTI-SPAM CHECKS
+    const check = await runSpamChecks(ctx, args.campaignId, args.groupId, args.postContent);
+    if (!check.canPost) {
+      return {
+        status: "blocked",
+        reason: "anti_spam_check_failed",
+        blocks: check.blocks,
+      };
+    }
+
     const postId = await ctx.db.insert("facebookGroupPosts", {
       campaignId: args.campaignId,
       campaignTitle: args.campaignTitle,
@@ -330,7 +377,7 @@ export const createGroupPost = mutation({
 });
 
 // Mutation: Bulk create posts across multiple joined groups
-// The agent generates campaign content and posts to all joined groups at once
+// Runs anti-spam checks PER GROUP — one blocked group doesn't block others
 export const bulkCreateGroupPosts = mutation({
   args: {
     campaignId: v.string(),
@@ -341,6 +388,7 @@ export const bulkCreateGroupPosts = mutation({
   },
   handler: async (ctx, { campaignId, campaignTitle, postType, postContent, targetGroupIds }) => {
     let created = 0;
+    let blocked = 0;
     let failed = 0;
     const results: any[] = [];
 
@@ -349,6 +397,14 @@ export const bulkCreateGroupPosts = mutation({
       if (!group || group.joinStatus !== "joined" || !group.canPost) {
         failed++;
         results.push({ groupId, status: "cannot_post", reason: group ? group.joinStatus : "not_found" });
+        continue;
+      }
+
+      // RUN ANTI-SPAM CHECKS PER GROUP
+      const check = await runSpamChecks(ctx, campaignId, groupId, postContent);
+      if (!check.canPost) {
+        blocked++;
+        results.push({ groupId, groupName: group.groupName, status: "blocked", blocks: check.blocks });
         continue;
       }
 
@@ -371,7 +427,14 @@ export const bulkCreateGroupPosts = mutation({
       results.push({ postId, groupName: group.groupName, status: "created" });
     }
 
-    return { status: "success", created, failed, total: targetGroupIds.length, results };
+    return {
+      status: "success",
+      created,
+      blocked,
+      failed,
+      total: targetGroupIds.length,
+      results,
+    };
   },
 });
 
@@ -411,15 +474,12 @@ export const markPostFailed = mutation({
     error: v.string(),
   },
   handler: async (ctx, { postId, error }) => {
-    await ctx.db.patch(postId, {
-      postStatus: "failed",
-      error,
-    });
+    await ctx.db.patch(postId, { postStatus: "failed", error });
     return { status: "failed" };
   },
 });
 
-// Mutation: Update post engagement stats (reactions, comments, shares)
+// Mutation: Update post engagement stats
 export const updatePostEngagement = mutation({
   args: {
     postId: v.id("facebookGroupPosts"),
@@ -463,6 +523,7 @@ export const getAllPosts = query({
       pending: posts.filter((p) => p.postStatus === "pending").length,
       scheduled: posts.filter((p) => p.postStatus === "scheduled").length,
       failed: posts.filter((p) => p.postStatus === "failed").length,
+      blocked: posts.filter((p) => p.postStatus === "blocked").length,
       totalReactions: posts.reduce((s, p) => s + p.reactions, 0),
       totalComments: posts.reduce((s, p) => s + p.comments, 0),
       totalShares: posts.reduce((s, p) => s + p.shares, 0),
@@ -473,9 +534,7 @@ export const getAllPosts = query({
 
 // Query: Get posts for a specific group
 export const getGroupPosts = query({
-  args: {
-    groupId: v.id("facebookGroups"),
-  },
+  args: { groupId: v.id("facebookGroups") },
   handler: async (ctx, { groupId }) => {
     return await ctx.db.query("facebookGroupPosts")
       .withIndex("byGroupId", (q) => q.eq("groupId", groupId))
@@ -500,6 +559,12 @@ export const getOutreachDashboard = query({
     const joinedGroups = groups.filter((g) => g.joinStatus === "joined");
     const totalReach = joinedGroups.reduce((s, g) => s + g.memberCount, 0);
 
+    // Anti-spam compliance summary
+    const today = new Date().toISOString().split("T")[0];
+    const postsToday = posts.filter(
+      (p) => p.postStatus === "posted" && p.postedAt && p.postedAt.startsWith(today)
+    );
+
     return {
       groups: {
         total: groups.length,
@@ -518,6 +583,18 @@ export const getOutreachDashboard = query({
         totalReactions: posts.reduce((s, p) => s + p.reactions, 0),
         totalComments: posts.reduce((s, p) => s + p.comments, 0),
         totalShares: posts.reduce((s, p) => s + p.shares, 0),
+      },
+      spamCompliance: {
+        postsToday: postsToday.length,
+        maxPerDay: MAX_POSTS_PER_DAY,
+        cooldownHours: COOLDOWN_HOURS,
+        compliant: postsToday.length <= MAX_POSTS_PER_DAY,
+        rules: [
+          `Max ${MAX_POSTS_PER_DAY} posts per campaign per day`,
+          `Min ${COOLDOWN_HOURS} hours between posts to the same group`,
+          `No duplicate content (>${Math.round(SIMILARITY_THRESHOLD * 100)}% similar)`,
+          `No posting to blocked groups`,
+        ],
       },
       topGroups: joinedGroups
         .sort((a, b) => b.memberCount - a.memberCount)

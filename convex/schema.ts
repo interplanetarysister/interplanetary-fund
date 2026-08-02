@@ -171,7 +171,7 @@ export default defineSchema({
     updatedAt: v.string(),
   }),
 
-  // FACEBOOK CONNECTIONS — user's linked Facebook account
+  // FACEBOOK CONNECTIONS
   facebookConnections: defineTable({
     userId: v.string(),
     facebookUserId: v.string(),
@@ -179,10 +179,10 @@ export default defineSchema({
     accessToken: v.string(),
     permissions: v.array(v.string()),
     connectedAt: v.string(),
-    status: v.string(), // "active", "disconnected", "expired"
+    status: v.string(),
   }).index("byUserId", ["userId"]).index("byStatus", ["status"]),
 
-  // DISCOVERED FACEBOOK GROUPS — groups the agent found for a campaign
+  // DISCOVERED FACEBOOK GROUPS
   facebookGroups: defineTable({
     campaignId: v.string(),
     campaignTitle: v.string(),
@@ -193,8 +193,8 @@ export default defineSchema({
     memberCount: v.number(),
     groupCategory: v.string(),
     groupDescription: v.string(),
-    relevanceScore: v.number(), // 0-100, how likely this group will donate
-    joinStatus: v.string(), // "discovered", "join_requested", "joined", "rejected", "failed"
+    relevanceScore: v.number(),
+    joinStatus: v.string(),
     joinedAt: v.optional(v.string()),
     canPost: v.boolean(),
     postsCount: v.number(),
@@ -203,17 +203,17 @@ export default defineSchema({
     discoveredAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byJoinStatus", ["joinStatus"]),
 
-  // FACEBOOK GROUP POSTS — posts made by the agent to groups
+  // FACEBOOK GROUP POSTS
   facebookGroupPosts: defineTable({
     campaignId: v.string(),
     campaignTitle: v.string(),
-    groupId: v.string(), // Convex facebookGroups _id
+    groupId: v.string(),
     groupFacebookId: v.string(),
     groupName: v.string(),
-    postType: v.string(), // "campaign_launch", "update", "milestone", "reminder", "thank_you"
+    postType: v.string(),
     postContent: v.string(),
     postUrl: v.optional(v.string()),
-    postStatus: v.string(), // "pending", "posted", "failed", "scheduled"
+    postStatus: v.string(),
     scheduledFor: v.optional(v.string()),
     postedAt: v.optional(v.string()),
     reactions: v.number(),
@@ -223,7 +223,7 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byGroupId", ["groupId"]).index("byStatus", ["postStatus"]),
 
-  // ACCOUNTS CREATED — tracks all accounts Lyra creates on Michelle's behalf
+  // ACCOUNTS CREATED
   accountsCreated: defineTable({
     platform: v.string(),
     accountEmail: v.string(),
@@ -236,7 +236,7 @@ export default defineSchema({
     reportDate: v.optional(v.string()),
   }).index("byReported", ["reported"]).index("byPlatform", ["platform"]),
 
-  // SPAM BLOCKLIST — groups or users that asked to stop or were flagged
+  // SPAM BLOCKLIST
   spamBlocklist: defineTable({
     identifier: v.string(),
     identifierType: v.string(),
@@ -244,4 +244,27 @@ export default defineSchema({
     platform: v.string(),
     blockedAt: v.string(),
   }).index("byIdentifier", ["identifier"]).index("byPlatform", ["platform"]),
+
+  // UNIVERSAL INBOX — all platform messages in one place
+  universalInbox: defineTable({
+    platform: v.string(),
+    senderName: v.string(),
+    senderId: v.string(),
+    recipientId: v.string(),
+    subject: v.optional(v.string()),
+    body: v.string(),
+    platformMessageId: v.string(),
+    platformUrl: v.optional(v.string()),
+    groupId: v.optional(v.string()),
+    groupName: v.optional(v.string()),
+    campaignId: v.optional(v.string()),
+    status: v.string(),        // "new", "read", "replied", "archived"
+    forwarded: v.boolean(),
+    forwardedAt: v.optional(v.string()),
+    replied: v.boolean(),
+    repliedAt: v.optional(v.string()),
+    replyContent: v.optional(v.string()),
+    priority: v.string(),      // "high", "normal", "low"
+    receivedAt: v.string(),
+  }).index("byStatus", ["status"]).index("byPlatform", ["platform"]).index("byReceivedAt", ["receivedAt"]),
 });

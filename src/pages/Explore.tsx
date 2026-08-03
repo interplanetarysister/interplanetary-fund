@@ -42,8 +42,8 @@ export default function Explore() {
   }
 
   // Stats come from lightweight query, not from loading all campaigns
-  const totalRaised = (balances.grandTotal?.raised || 0) + (stats.totalRaised || 0);
-  const totalDonors = (balances.grandTotal?.donors || 0) + (stats.totalDonors || 0);
+  const totalRaised = balances.grandTotal?.raised || 0;
+  const totalDonors = balances.grandTotal?.donors || 0;
   const activeCount = stats.activeCount || 0;
 
   const numericAmount = parseFloat(donationAmount) || 0;

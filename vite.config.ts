@@ -11,27 +11,12 @@ export default defineConfig({
     // Disable source maps — prevents code recovery from production build
     sourcemap: false,
     // Aggressive minification
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        // Strip all console logs in production
-        drop_console: true,
-        drop_debugger: true,
-        // Remove dead code
-        dead_code: true,
-        // Inline small functions
-        passes: 3,
-      },
-      mangle: {
-        // Mangle all variable names to obfuscate
-        toplevel: true,
-        // Protect specific names
-        reserved: ["Convex", "React"],
-      },
-      // Remove all comments
-      format: {
-        comments: false,
-      },
+    minify: "esbuild",
+    esbuildOptions: {
+      drop: ["console", "debugger"],
+      minify: true,
+      // Keep banner for copyright watermark
+      legalComments: "none",
     },
     // Remove all HTML comments and whitespace
     rollupOptions: {

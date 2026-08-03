@@ -25,14 +25,17 @@ export function TermsAcceptance({ children }: { children: React.ReactNode }) {
   if (accepted) return <>{children}</>;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4">
-      <div className="max-w-md bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-        <h2 className="text-white text-xl font-bold mb-3">Terms of Service</h2>
-        <p className="text-zinc-400 text-sm mb-4">
+    <div className="fixed inset-0 z-[60] bg-ifdark flex items-center justify-center p-4 overflow-y-auto">
+      <div className="max-w-md w-full bg-ifcard rounded-2xl p-6 border border-ifborder glow-card my-auto">
+        <div className="text-center mb-4">
+          <div className="w-12 h-12 rounded-xl bg-ifaccent flex items-center justify-center text-ifwhite font-bold text-xl mx-auto mb-3 shadow-glow-purple">IF</div>
+          <h2 className="text-lg font-bold text-iftext">Terms of Service</h2>
+        </div>
+        <p className="text-ifmuted text-sm mb-4">
           By using Interplanetary Fund, you agree to our Terms of Service and
           Privacy Policy (last updated {TERMS_DATE}).
         </p>
-        <div className="text-zinc-500 text-xs mb-4 space-y-1">
+        <div className="text-ifmuted text-xs mb-5 space-y-1.5">
           <p>The platform is provided "AS IS" without warranties of any kind.</p>
           <p>Michelle Rogers is not liable for losses exceeding $50 per claim.</p>
           <p>Users assume all risk. Donations are voluntary and may not reach campaign goals.</p>
@@ -40,7 +43,7 @@ export function TermsAcceptance({ children }: { children: React.ReactNode }) {
         </div>
         <button
           onClick={accept}
-          className="w-full bg-yellow-400 text-black font-bold py-3 rounded-lg hover:bg-yellow-300 transition-colors"
+          className="btn-primary"
         >
           I Agree — Continue
         </button>

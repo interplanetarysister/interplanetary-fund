@@ -316,3 +316,89 @@ body {
 
 .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
 .animate-float { animation: float 6s ease-in-out infinite; }
+
+/* ===== SCROLL FIXES ===== */
+
+/* Allow horizontal scrolling on all overflow-x containers */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #22d3ee transparent;
+}
+
+/* Make scrollbar visible but subtle for horizontal scroll areas */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 3px;
+  display: block;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.3);
+  border-radius: 9999px;
+}
+
+/* Vertical scroll for modal content */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Ensure body can always scroll vertically */
+html, body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for Base44 preview iframe — allow bidirectional scroll */
+html {
+  overflow-x: auto;
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* Ensure main content area scrolls properly on all devices */
+main {
+  overflow-y: visible;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Don't constrain width on very small screens */
+@media (max-width: 380px) {
+  .max-w-md {
+    max-width: 100%;
+  }
+}
+
+/* Allow admin tab bar to scroll smoothly */
+.scrollbar-hide {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Fix for campaign cards — ensure they fit container width */
+.card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Prevent any element from causing horizontal overflow */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Table-responsive for any data tables */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}

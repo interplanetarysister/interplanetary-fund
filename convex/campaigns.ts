@@ -34,6 +34,9 @@ export const updateCoverImage = mutation({
 export const recordDonation = mutation({
   args: { campaignId: v.string(), campaignTitle: v.string(), amount: v.number(), donorName: v.string(), message: v.optional(v.string()), paymentMethod: v.string() },
   handler: async (ctx, args) => {
+    if (!validateDonation(args.amount)) {
+      throw new Error("Invalid donation amount. Must be between $0.01 and $100,000.");
+    }
     const donationId = await ctx.db.insert("donations", { ...args, message: args.message || "", status: "completed", createdAt: new Date().toISOString() });
     const campaign = await ctx.db.query("monitoredCampaigns")
       .withIndex("byIfId", (q) => q.eq("ifCampaignId", args.campaignId)).first();

@@ -5,6 +5,7 @@
  */
 
 import { query, mutation, internalMutation } from "./_generated/server";
+import { validateDonation, validateWithdrawal, checkRateLimit } from "./security";
 import { v } from "convex/values";
 
 // =====================================================
@@ -203,6 +204,7 @@ export const requestPayout = mutation({
     payoutDestination: v.string(),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("payout_request", 3, 300000);
     const account = await ctx.db.query("holdingAccounts")
       .filter((q) => q.eq("userId", args.userId))
       .first();
@@ -271,6 +273,7 @@ export const completePayout = mutation({
     transactionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("payout_complete", 5, 300000);
     const payout = await ctx.db.get(args.payoutId);
     if (!payout) throw new Error("Payout request not found");
     if (payout.status !== "pending") throw new Error(`Payout already ${payout.status}`);

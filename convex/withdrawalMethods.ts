@@ -5,6 +5,7 @@
  */
 
 import { query, mutation } from "./_generated/server";
+import { checkRateLimit, validateWithdrawal } from "./security";
 import { v } from "convex/values";
 
 // =====================================================
@@ -143,6 +144,10 @@ export const recordNonStripeWithdrawal = mutation({
     withdrawnBy: v.string(),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("non_stripe_withdrawal", 3, 300000);
+    if (!validateWithdrawal(args.grossAmount, 100000)) {
+      throw new Error("Invalid withdrawal amount.");
+    }
     const platformData = (PLATFORM_WITHDRAWAL_METHODS as Record<string, any>)[args.platformKey];
     if (!platformData) {
       throw new Error(`Unknown platform: ${args.platformKey}`);

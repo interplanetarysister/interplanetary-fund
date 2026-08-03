@@ -1,4 +1,18 @@
 import { query, mutation } from "./_generated/server";
+
+
+const BUSINESS_EMAIL = "interplanetarysister@gmail.com";
+
+function generatePayPalLink(campaignTitle: string): string {
+  const params = new URLSearchParams({
+    cmd: "_donations",
+    business: BUSINESS_EMAIL,
+    item_name: `${campaignTitle} - Interplanetary Fund`,
+    currency_code: "USD",
+  });
+  return `https://www.paypal.com/donate/?${params.toString()}`;
+}
+
 import { v } from "convex/values";
 
 // =====================================================
@@ -313,11 +327,16 @@ export const generatePostTemplate = query({
         template = `Hi ${groupName}! We'd love to share "${title}" with you. ${summary} We're raising $${goal.toLocaleString()} and every bit of support helps.`;
     }
 
+    const paypalLink = generatePayPalLink(title);
+    const templateWithDonation = template + `\n\n💝 Donate now (any amount): ${paypalLink}\nThank you for your support! 🙏`;
+
     return {
-      template,
+      template: templateWithDonation,
+      originalTemplate: template,
       postType,
       campaignTitle: title,
-      estimatedLength: template.length,
+      paypalLink,
+      estimatedLength: templateWithDonation.length,
     };
   },
 });

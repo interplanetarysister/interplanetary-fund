@@ -267,4 +267,24 @@ export default defineSchema({
     priority: v.string(),      // "high", "normal", "low"
     receivedAt: v.string(),
   }).index("byStatus", ["status"]).index("byPlatform", ["platform"]).index("byReceivedAt", ["receivedAt"]),
+
+  // DISTRIBUTED POSTS — cross-platform published content
+  distributedPosts: defineTable({
+    campaignId: v.string(),
+    campaignTitle: v.string(),
+    platform: v.string(),
+    postType: v.string(),
+    content: v.string(),
+    paypalLink: v.optional(v.string()),
+    postUrl: v.optional(v.string()),
+    status: v.string(),
+    scheduledFor: v.optional(v.string()),
+    postedAt: v.optional(v.string()),
+    reactions: v.optional(v.number()),
+    comments: v.optional(v.number()),
+    shares: v.optional(v.number()),
+    error: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("byCampaignId", ["campaignId"]).index("byPlatform", ["platform"]).index("byStatus", ["status"]),
+
 });

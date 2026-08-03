@@ -95,19 +95,27 @@ Subtle starfield + nebula gradient on the body — gives depth without distracti
 | Dashboard | "Mission Control" | Your interplanetary command center |
 | Campaigns | "Launch Pads" | Fuel your campaign for liftoff |
 | Treasury | "The Vault" | Interplanetary treasury management |
-| Agents | "Crew" | Your AI crew, working across the galaxy |
+| Agents | "The Crew" | Your AI crew, working across the galaxy |
 | Platforms | "Stations" | Connected stations across the network |
 | Reports | "Telemetry" | Live data from across the solar system |
 | Facebook Groups | "Sectors" | Outreach sectors across the network |
 | Explore | "Discover" | Discover campaigns across the universe |
 | Admin | "Command" | Admin command center |
+| Users | "Pilots" | Every user is a pilot on a mission |
 | Donations | "Fuel" | Fuel the mission — every drop counts |
 | Goal | "Target Orbit" | Set your target orbit |
 | Raised | "Altitude" | Current altitude — climbing steady |
-| Payout | "Touchdown" | Mission complete — funds landed |
+| Payout | "Wheels Down" | Funds have landed safely |
+| Campaign Story Published | "Godspeed, Captain!" | Wished to every pilot after their story goes live |
 | Active Campaign | "In Orbit" | Campaign is live and orbiting |
-| Draft Campaign | "Pre-Launch" | On the launch pad, preparing for liftoff |
+| Draft Campaign | "Pre-Flight" | On the launch pad, preparing for takeoff |
 | Completed Campaign | "Mission Complete" | Goal reached, mission accomplished |
+| Pending Status | "Holding Pattern" | Awaiting clearance |
+| Error/Failed | "Mayday" | Something needs immediate attention |
+| Campaign Validation | "Pre-Flight Check" | Verifying campaign before launch |
+| Campaign Going Live | "Cleared for Takeoff" | Ready to launch |
+| Transaction History | "Flight Log" | Every move, logged |
+| Admin Panel | "Cockpit" | Full controls at your fingertips |
 
 ### UI Copy Examples
 
@@ -119,15 +127,29 @@ Subtle starfield + nebula gradient on the body — gives depth without distracti
 
 "Telemetry shows strong momentum — altitude climbing."
 
-"Touchdown! Your payout has landed."
+"Wheels down. Your payout has landed safely."
+
+"Godspeed, Captain!" — displayed after a pilot's campaign story is published.
+
+"Cleared for takeoff — your launch pad is live."
+
+"Holding pattern — awaiting platform clearance."
+
+"Mayday — this campaign needs attention."
+
+"Pre-flight check complete. You're cleared for takeoff."
 
 ### Empty States
 
 "No active launch pads. Create a campaign to start your mission."
 
-"Crew is offline. Activate agents to begin operations."
+"The crew is offline. Activate agents to begin operations."
 
 "No telemetry data yet. Data streams will appear as missions progress."
+
+"No flight logs yet. Transactions will appear as missions progress."
+
+"No pilots in holding pattern. All clear."
 
 ## App Icon
 

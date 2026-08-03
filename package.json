@@ -1,7 +1,7 @@
 {
   "name": "interplanetary-fund",
   "version": "1.0.0",
-  "description": "Interplanetary Fund — full-stack app with agents, protocol enforcement, treasury management, and external platform sync. Frontend: React + Vite. Backend: Convex. Credit-free.",
+  "description": "Interplanetary Fund \u2014 full-stack app with agents, protocol enforcement, treasury management, and external platform sync. Frontend: React + Vite. Backend: Convex. Credit-free.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -34,6 +34,16 @@
     "vite": "^5.4.0",
     "@capacitor/cli": "^6.1.0"
   },
-  "keywords": ["interplanetary-fund", "agents", "protocol", "treasury", "convex", "react", "capacitor", "mobile"],
-  "license": "MIT"
+  "keywords": [
+    "interplanetary-fund",
+    "agents",
+    "protocol",
+    "treasury",
+    "convex",
+    "react",
+    "capacitor",
+    "mobile"
+  ],
+  "license": "UNLICENSED",
+  "author": "Michelle Rogers"
 }

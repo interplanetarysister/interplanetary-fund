@@ -1,3 +1,9 @@
+/*
+ * Interplanetary Fund — Copyright © 2026 Michelle Rogers. All Rights Reserved.
+ * PROPRIETARY AND CONFIDENTIAL. Do not copy, distribute, or modify without
+ * express written permission. See LICENSE file for full terms.
+ */
+
 /**
  * Generates a one-click PayPal donate link for any campaign.
  * This link works anywhere: Facebook posts, emails, text messages, bios.

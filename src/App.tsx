@@ -1,3 +1,10 @@
+/*
+ * Interplanetary Fund — Copyright © 2026 Michelle Rogers. All Rights Reserved.
+ * PROPRIETARY AND CONFIDENTIAL. Do not copy, distribute, or modify without
+ * express written permission. See LICENSE file for full terms.
+ */
+
+import { TermsAcceptance } from "./components/TermsAcceptance";
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -54,6 +61,7 @@ export default function App() {
   ];
 
   return (
+    <TermsAcceptance>
     <div className="min-h-screen bg-ifdark flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-ifdark/95 backdrop-blur border-b border-ifborder">
@@ -177,5 +185,6 @@ export default function App() {
         </nav>
       )}
     </div>
+  </TermsAcceptance>
   );
 }

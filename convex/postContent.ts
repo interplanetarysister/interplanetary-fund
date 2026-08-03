@@ -100,3 +100,116 @@ export const fixMissingPayPalLinks = mutation({
     };
   },
 });
+
+// =====================================================
+// AUTO-PUBLISHING PIPELINE — wired into crons.ts
+// =====================================================
+// Daily auto-generation of post content for all active campaigns.
+// Generates empathetic posts with PayPal donate links and stores them as pending.
+
+import { internalMutation } from "./_generated/server";
+
+export const autoGeneratePosts = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    // Get all active campaigns with outreach enabled
+    const campaigns = await ctx.db.query("monitoredCampaigns")
+      .withIndex("byStatus", (q) => q.eq("status", "active"))
+      .collect();
+    
+    const activeCampaigns = campaigns.filter(c => c.outreachEnabled === true);
+    const results = [];
+    
+    for (const campaign of activeCampaigns) {
+      const paypalLink = generatePayPalLink(campaign.title);
+      
+      // Generate empathetic post content based on campaign summary
+      const summary = campaign.summary || "Support our campaign. Every dollar makes a difference.";
+      const content = `💜 ${campaign.title}\n\n${summary}\n\nYour support means everything to us. Together, we can make a real difference. Every contribution, no matter the size, brings us one step closer to our goal.\n\n💝 Donate now (any amount): ${paypalLink}\nThank you for your support! 🙏`;
+      
+      // Store as pending post in distributedPosts for each target platform
+      const platforms = ["facebook", "bluesky", "gofundme", "patreon", "buymeacoffee", "ko-fi", "spotfund", "indiegogo", "givesendgo"];
+      
+      for (const platform of platforms) {
+        // Check if we already have a pending post for this campaign+platform today
+        const existing = await ctx.db.query("distributedPosts")
+          .withIndex("byCampaignId", (q) => q.eq("campaignId", campaign.ifCampaignId))
+          .collect();
+        
+        const today = new Date().toISOString().split("T")[0];
+        const alreadyPostedToday = existing.some(p => 
+          p.platform === platform && 
+          p.createdAt?.startsWith(today) &&
+          (p.status === "pending" || p.status === "posted")
+        );
+        
+        if (!alreadyPostedToday) {
+          const postId = await ctx.db.insert("distributedPosts", {
+            campaignId: campaign.ifCampaignId,
+            campaignTitle: campaign.title,
+            platform,
+            postType: "outreach",
+            content,
+            paypalLink,
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          });
+          results.push({ campaign: campaign.title, platform, postId });
+        }
+      }
+    }
+    
+    return {
+      status: "success",
+      campaignsProcessed: activeCampaigns.length,
+      postsGenerated: results.length,
+      results,
+    };
+  },
+});
+
+// Query to get all pending posts ready for publishing
+export const getPublishablePosts = query({
+  args: {},
+  handler: async (ctx) => {
+    const pending = await ctx.db.query("distributedPosts")
+      .withIndex("byStatus", (q) => q.eq("status", "pending"))
+      .collect();
+    return pending;
+  },
+});
+
+// Mutation to mark a post as posted
+export const markPostPublished = mutation({
+  args: { 
+    postId: v.string(), 
+    postUrl: v.optional(v.string()),
+    reactions: v.optional(v.number()),
+    comments: v.optional(v.number()),
+    shares: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.postId as any, {
+      status: "posted",
+      postUrl: args.postUrl,
+      postedAt: new Date().toISOString(),
+      reactions: args.reactions || 0,
+      comments: args.comments || 0,
+      shares: args.shares || 0,
+    });
+    return { status: "success" };
+  },
+});
+
+// Mutation to mark a post as failed
+export const markPostFailed = mutation({
+  args: { postId: v.string(), error: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.postId as any, {
+      status: "failed",
+      error: args.error,
+      postedAt: new Date().toISOString(),
+    });
+    return { status: "success" };
+  },
+});

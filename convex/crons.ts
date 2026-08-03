@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 // All times in UTC. Pacific is UTC-7 (PDT) or UTC-8 (PST).
 // 6am Pacific = 13:00 UTC (during PDT)
 // Saturday 2am Pacific = 09:00 UTC Saturday (during PDT)
+// 8am Pacific = 15:00 UTC (during PDT) — daily post generation
 
 const crons = cronJobs();
 
@@ -23,6 +24,16 @@ crons.weekly(
   "weekly-training-session",
   { dayOfWeek: "saturday", hourUTC: 9, minuteUTC: 0 },
   internal.protocol.weeklyTraining,
+  {}
+);
+
+// Daily Auto-Post Generation — 8am Pacific (15:00 UTC)
+// Generates empathetic posts with PayPal links for all active campaigns
+// Posts are stored as "pending" in distributedPosts for agents to publish
+crons.daily(
+  "daily-post-generation",
+  { hourUTC: 15, minuteUTC: 0 },
+  internal.postContent.autoGeneratePosts,
   {}
 );
 

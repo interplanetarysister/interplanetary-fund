@@ -5,6 +5,7 @@
  */
 
 import { query, mutation } from "./_generated/server";
+import { checkRateLimit } from "./security";
 import { v } from "convex/values";
 
 // Admin PIN — stored server-side only, never exposed to client

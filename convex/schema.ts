@@ -293,4 +293,12 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byPlatform", ["platform"]).index("byStatus", ["status"]),
 
+
+
+// Admin settings (security PIN, config)
+  defineTable({
+    key: v.string(),
+    value: v.string(),
+    updatedAt: v.string(),
+  }).index("byKey", ["key"]),
 });

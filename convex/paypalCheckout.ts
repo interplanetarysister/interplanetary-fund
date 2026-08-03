@@ -5,6 +5,7 @@
  */
 
 import { mutation, query } from "./_generated/server";
+import { validateDonation, checkRateLimit } from "./security";
 import { v } from "convex/values";
 
 // Create a PayPal checkout session (returns redirect URL)
@@ -17,6 +18,10 @@ export const createCheckoutSession = mutation({
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("checkout", 10, 60000); // Max 10 per minute
+    if (!validateDonation(args.amount || 0)) {
+      throw new Error("Invalid donation amount.");
+    }
     // Record the pending donation
     const donationId = await ctx.db.insert("donations", {
       campaignId: args.campaignId,
@@ -54,6 +59,10 @@ export const confirmDonation = mutation({
     paypalTransactionId: v.string(),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("checkout", 10, 60000); // Max 10 per minute
+    if (!validateDonation(args.amount || 0)) {
+      throw new Error("Invalid donation amount.");
+    }
     const donation = await ctx.db.get(args.donationId);
     if (!donation) {
       throw new Error("Donation not found");
@@ -107,6 +116,10 @@ export const confirmDonation = mutation({
 export const getDonations = query({
   args: { campaignId: v.string() },
   handler: async (ctx, args) => {
+    checkRateLimit("checkout", 10, 60000); // Max 10 per minute
+    if (!validateDonation(args.amount || 0)) {
+      throw new Error("Invalid donation amount.");
+    }
     return await ctx.db
       .query("donations")
       .withIndex("byCampaignId", (q) => q.eq("campaignId", args.campaignId))

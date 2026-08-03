@@ -5,6 +5,7 @@
  */
 
 import { query, mutation } from "./_generated/server";
+import { validateWithdrawal, checkRateLimit } from "./security";
 import { v } from "convex/values";
 
 // =====================================================
@@ -68,6 +69,10 @@ export const withdraw = mutation({
     payoutDestination: v.string(), // "$unrewound" or email
   },
   handler: async (ctx, args) => {
+    checkRateLimit("withdraw", 3, 300000); // Max 3 withdrawals per 5 minutes
+    if (!validateWithdrawal(args.amount, args.availableBalance || 999999)) {
+      throw new Error("Invalid withdrawal: check amount and available balance.");
+    }
     // Get campaign
     const campaign = await ctx.db
       .query("monitoredCampaigns")
@@ -143,6 +148,10 @@ export const completeWithdrawal = mutation({
     transactionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("withdraw", 3, 300000); // Max 3 withdrawals per 5 minutes
+    if (!validateWithdrawal(args.amount, args.availableBalance || 999999)) {
+      throw new Error("Invalid withdrawal: check amount and available balance.");
+    }
     const payout = await ctx.db.get(args.payoutId);
     if (!payout) throw new Error("Payout not found");
     if (payout.status !== "pending_payout") {

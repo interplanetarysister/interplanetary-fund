@@ -5,6 +5,7 @@
  */
 
 import { mutation, query } from "./_generated/server";
+import { validateDonation, checkRateLimit } from "./security";
 import { v } from "convex/values";
 
 // Record a fund migration from an external platform
@@ -18,6 +19,10 @@ export const recordMigration = mutation({
     withdrawnBy: v.string(),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("fund_migration", 5, 300000); // Max 5 per 5 min
+    if (args.amount !== undefined && !validateDonation(args.amount)) {
+      throw new Error("Invalid amount for fund migration.");
+    }
     // Calculate fees
     const platformFee = args.grossAmount * 0.05;
     const processingFee = args.grossAmount * 0.029 + 0.30;
@@ -93,6 +98,10 @@ export const recordMigration = mutation({
 export const getPendingPayouts = query({
   args: { campaignId: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    checkRateLimit("fund_migration", 5, 300000); // Max 5 per 5 min
+    if (args.amount !== undefined && !validateDonation(args.amount)) {
+      throw new Error("Invalid amount for fund migration.");
+    }
     let payouts = await ctx.db.query("payoutRequests").collect();
     
     if (args.campaignId) {
@@ -120,6 +129,10 @@ export const selectPayoutMethod = mutation({
     payoutDestination: v.string(),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("fund_migration", 5, 300000); // Max 5 per 5 min
+    if (args.amount !== undefined && !validateDonation(args.amount)) {
+      throw new Error("Invalid amount for fund migration.");
+    }
     const payout = await ctx.db.get(args.payoutId);
     if (!payout) {
       throw new Error("Payout not found");
@@ -142,6 +155,10 @@ export const selectPayoutMethod = mutation({
 export const getMigrationHistory = query({
   args: { campaignId: v.string() },
   handler: async (ctx, args) => {
+    checkRateLimit("fund_migration", 5, 300000); // Max 5 per 5 min
+    if (args.amount !== undefined && !validateDonation(args.amount)) {
+      throw new Error("Invalid amount for fund migration.");
+    }
     const donations = await ctx.db
       .query("donations")
       .withIndex("byCampaignId", (q) => q.eq("campaignId", args.campaignId))
@@ -171,6 +188,10 @@ export const batchMigrate = mutation({
     withdrawnBy: v.string(),
   },
   handler: async (ctx, args) => {
+    checkRateLimit("fund_migration", 5, 300000); // Max 5 per 5 min
+    if (args.amount !== undefined && !validateDonation(args.amount)) {
+      throw new Error("Invalid amount for fund migration.");
+    }
     const results = [];
     let totalGross = 0;
     let totalFees = 0;

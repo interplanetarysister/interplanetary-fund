@@ -6,3 +6,5 @@ convex/_generated/
 .DS_Store
 dist/
 .env.convex
+.env.production
+.netlify/

@@ -156,13 +156,30 @@ Subtle starfield + nebula gradient on the body — gives depth without distracti
 Afro-punk comic book style planet with electric cyan/magenta energy radiating outward.
 Dark navy background (#05060f). Bold, simple silhouette readable at small sizes.
 
+## Warm Accent Policy
+
+Warm colors (solar orange, comet orange, nebula red, gold) are acceptable when
+they represent natural space phenomena — comets, the sun, solar flares, nebulae.
+Use sparingly. They should complement, not compete with, the electric blues and
+purples. Hyper-realistic planetary features (atmospheres, ring systems, surface
+textures) should be used for theme elements.
+
+### Warm Color Tokens
+| Token | Hex | Usage |
+|-------|-----|-------|
+| ifsolar | #f97316 | Solar orange — sun, solar flares, urgency |
+| ifcomet | #fb923c | Comet tail — warm highlights, streaks |
+| ifnebula | #dc2626 | Nebula red — deep warm accents |
+| ifgold | #fbbf24 | Gold — star cores, special highlights |
+
 ## Do Not
 
 1. Do not use light backgrounds — black majority always
-2. Do not use warm colors as primary — blues and purples only
+2. Do not use warm colors as PRIMARY — they are accents only, for space phenomena
 3. Do not use heavy borders — keep it subtle with glow effects
 4. Do not clutter — space is the luxury, use it generously
 5. Do not use generic icons — everything should feel interplanetary
+6. Do not overuse warm colors — blues and purples are still the dominant palette
 
 ---
 

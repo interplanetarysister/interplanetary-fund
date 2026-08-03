@@ -39,12 +39,17 @@ export default {
         'solar-gradient': 'linear-gradient(135deg, #05060f 0%, #0c0d1a 50%, #1a0a2e 100%)',
         'electric-fade': 'linear-gradient(180deg, rgba(34, 211, 238, 0.05) 0%, transparent 100%)',
         'neon-border': 'linear-gradient(90deg, #22d3ee, #8b5cf6, #22d3ee)',
+        'comet-trail': 'linear-gradient(90deg, transparent, #fb923c, #f97316, transparent)',
+        'solar-flare': 'radial-gradient(circle, rgba(249, 115, 22, 0.2) 0%, transparent 60%)',
+        'nebula-warm': 'radial-gradient(ellipse at bottom right, rgba(220, 38, 38, 0.08) 0%, transparent 50%)',
       },
       boxShadow: {
         'glow-cyan': '0 0 20px rgba(34, 211, 238, 0.3)',
         'glow-purple': '0 0 20px rgba(139, 92, 246, 0.3)',
         'glow-planet': '0 0 40px rgba(34, 211, 238, 0.15), 0 0 80px rgba(139, 92, 246, 0.08)',
         'inner-glow': 'inset 0 0 20px rgba(34, 211, 238, 0.05)',
+        'glow-solar': '0 0 20px rgba(249, 115, 22, 0.25)',
+        'glow-comet': '0 0 15px rgba(251, 146, 60, 0.2)',
       },
       animation: {
         'pulse-glow': 'pulse-glow 4s ease-in-out infinite',

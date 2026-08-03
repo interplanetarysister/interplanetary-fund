@@ -9,6 +9,7 @@ import { useQuery, useMutation } from "convex/react";
 import type { AdminUser } from "../types";
 import PermissionsManager from "../components/PermissionsManager";
 import FraudControl from "../components/FraudControl";
+import UserManagement from "../components/UserManagement";
 import { api } from "../../convex/_generated/api";
 
 type AdminTab =
@@ -32,6 +33,7 @@ const TAB_PERMISSIONS: Record<AdminTab, string> = {
   interactions: "reports",
   permissions: "users",  // only super admin
   control: "finance",  // super admin only — fraud prevention
+  users: "campaigns",  // admin with campaigns permission can view users
 };
 
 const ALL_TABS: { id: AdminTab; label: string }[] = [
@@ -42,6 +44,7 @@ const ALL_TABS: { id: AdminTab; label: string }[] = [
   { id: "platforms", label: "Platforms" },
   { id: "reports", label: "Reports" },
   { id: "interactions", label: "Activity" },
+  { id: "users", label: "Users" },
   { id: "permissions", label: "Access" },
   { id: "control", label: "Control" },
 ];
@@ -933,6 +936,11 @@ export default function Admin({ adminUser }: { adminUser: { name: string; role: 
         </div>
       )}
 
+
+      {/* ============ USER MANAGEMENT ============ */}
+      {tab === "users" && (
+        <UserManagement />
+      )}
 
       {/* ============ FRAUD CONTROL ============ */}
       {tab === "control" && isSuperAdmin && (

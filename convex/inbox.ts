@@ -6,6 +6,7 @@
 
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { requireSuperAdmin } from "./security";
 
 // =====================================================
 // UNIVERSAL INBOX — Central message hub
@@ -141,5 +142,64 @@ export const getInboxStats = query({
       },
       highPriorityUnread: all.filter((m) => m.status === "new" && m.priority === "high").length,
     };
+  },
+});
+
+
+// =====================================================
+// ADMIN MESSAGING — Super admin sends messages to users
+// =====================================================
+
+// Admin sends a message to a user via universal inbox
+export const sendAdminMessage = mutation({
+  args: {
+    adminPin: v.string(),
+    recipientId: v.string(),           // userId of recipient
+    subject: v.string(),
+    body: v.string(),
+    priority: v.optional(v.string()),   // "high", "normal", "low"
+  },
+  handler: async (ctx, { adminPin, recipientId, subject, body, priority }) => {
+    await requireSuperAdmin(ctx, adminPin);
+    
+    const id = await ctx.db.insert("universalInbox", {
+      platform: "admin",
+      senderName: "Interplanetary Fund Admin",
+      senderId: "super_admin",
+      recipientId,
+      subject,
+      body,
+      platformMessageId: `admin_msg_${Date.now()}`,
+      platformUrl: undefined,
+      groupId: undefined,
+      groupName: undefined,
+      campaignId: undefined,
+      status: "new",
+      forwarded: false,
+      replied: false,
+      priority: priority ?? "normal",
+      receivedAt: new Date().toISOString(),
+    });
+    
+    return { success: true, messageId: id };
+  },
+});
+
+// Get admin-sent messages
+export const getAdminMessages = query({
+  args: { adminPin: v.string(), recipientId: v.optional(v.string()) },
+  handler: async (ctx, { adminPin, recipientId }) => {
+    await requireSuperAdmin(ctx, adminPin);
+    
+    let messages = await ctx.db
+      .query("universalInbox")
+      .filter((q: any) => q.eq("platform", "admin"))
+      .collect();
+    
+    if (recipientId) {
+      messages = messages.filter(m => m.recipientId === recipientId);
+    }
+    
+    return messages.sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
   },
 });

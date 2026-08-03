@@ -614,3 +614,100 @@ export const getOutreachDashboard = query({
     };
   },
 });
+
+
+// =====================================================
+// GROUP QUESTIONNAIRE HANDLING & PROFILE BUILDING
+// =====================================================
+
+// Record questionnaire details for a group (before joining)
+export const recordGroupQuestionnaire = mutation({
+  args: {
+    groupId: v.id("facebookGroups"),
+    questionnaire: v.string(),        // the questions asked by the group
+    suggestedAnswers: v.string(),    // AI-suggested answers (minimal, appropriate)
+    status: v.string(),               // "pending_review" | "answered" | "submitted"
+  },
+  handler: async (ctx, { groupId, questionnaire, suggestedAnswers, status }) => {
+    await ctx.db.patch(groupId, {
+      joinQuestionnaire: questionnaire,
+      questionnaireAnswers: suggestedAnswers,
+      questionnaireStatus: status,
+    });
+    return { success: true };
+  },
+});
+
+// Get groups that have questionnaires pending review
+export const getPendingQuestionnaires = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("facebookGroups")
+      .filter((q: any) => 
+        q.and(
+          q.eq("questionnaireStatus", "pending_review"),
+          q.neq(q.field("joinQuestionnaire"), undefined),
+        )
+      )
+      .collect();
+  },
+});
+
+// Get group discovery summary by category (for agent verification)
+export const getGroupDiscoverySummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const allGroups = await ctx.db.query("facebookGroups").collect();
+    
+    const byCategory: Record<string, number> = {};
+    const byStatus: Record<string, number> = {};
+    
+    for (const g of allGroups) {
+      const cat = g.campaignCategory || "uncategorized";
+      byCategory[cat] = (byCategory[cat] || 0) + 1;
+      byStatus[g.joinStatus] = (byStatus[g.joinStatus] || 0) + 1;
+    }
+    
+    // Required categories with minimum 50 groups each
+    const REQUIRED_CATEGORIES = [
+      "donations", "grants", "assistance", "charity", "emergency",
+      "disaster_relief", "animal_care", "medical", "education",
+      "community", "housing", "food", "veterans", "children", "seniors"
+    ];
+    
+    const categoryCoverage = REQUIRED_CATEGORIES.map(cat => ({
+      category: cat,
+      count: byCategory[cat] || 0,
+      hasEnough: (byCategory[cat] || 0) >= 50,
+      target: 50,
+    }));
+    
+    return {
+      totalGroups: allGroups.length,
+      totalCategories: Object.keys(byCategory).length,
+      byStatus,
+      categoryCoverage,
+      groupsWithQuestionnaires: allGroups.filter(g => g.joinQuestionnaire).length,
+      groupsPendingQuestionnaire: allGroups.filter(g => g.questionnaireStatus === "pending_review").length,
+    };
+  },
+});
+
+// Update group join status with questionnaire answers
+export const submitGroupQuestionnaire = mutation({
+  args: {
+    groupId: v.id("facebookGroups"),
+    answers: v.string(),
+    joinStatus: v.string(),   // "pending" after submitting questionnaire
+  },
+  handler: async (ctx, { groupId, answers, joinStatus }) => {
+    await ctx.db.patch(groupId, {
+      questionnaireAnswers: answers,
+      questionnaireStatus: "submitted",
+      joinStatus,
+      lastError: undefined,
+    });
+    return { success: true };
+  },
+});

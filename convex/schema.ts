@@ -218,6 +218,9 @@ export default defineSchema({
     lastPostedAt: v.optional(v.string()),
     lastError: v.optional(v.string()),
     discoveredAt: v.string(),
+    joinQuestionnaire: v.optional(v.string()),
+    questionnaireAnswers: v.optional(v.string()),
+    questionnaireStatus: v.optional(v.string()),
   }).index("byCampaignId", ["campaignId"]).index("byJoinStatus", ["joinStatus"]),
 
   // FACEBOOK GROUP POSTS
@@ -304,6 +307,21 @@ export default defineSchema({
     createdAt: v.string(),
   }).index("byCampaignId", ["campaignId"]).index("byPlatform", ["platform"]).index("byStatus", ["status"]),
 
+
+  // USER PROFILES — tracks user account settings, AI toggles, admin access
+  userProfiles: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    email: v.string(),
+    subscriptionTier: v.string(),        // "standard" | "campaign_manager"
+    aiCrossPostingEnabled: v.boolean(),   // Campaign Manager Package — AI posts to Michelle's linked accounts
+    standardCrossPostingEnabled: v.boolean(),  // Standard — cross-post to user's own linked accounts (half frequency)
+    adminAccessStatus: v.string(),        // "none" | "requested" | "granted" | "denied" | "revoked"
+    adminAccessRequestedAt: v.optional(v.string()),
+    adminAccessGrantedAt: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  }).index("byUserId", ["userId"]).index("byTier", ["subscriptionTier"]),
 
   // ADMIN USERS — role-based access control
   adminUsers: defineTable({

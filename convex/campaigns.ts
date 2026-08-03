@@ -5,6 +5,7 @@
  */
 
 import { query, mutation, internalMutation } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 
 export const getCampaigns = query({

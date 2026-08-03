@@ -5,16 +5,17 @@
  */
 
 import { TermsAcceptance } from "./components/TermsAcceptance";
-import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense, useEffect, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 
-// Lazy load pages — Admin is heavy, only load when accessed via PIN
+// Lazy load pages
 const Explore = lazy(() => import("./pages/Explore"));
 const FacebookGroups = lazy(() => import("./pages/FacebookGroups"));
 const Admin = lazy(() => import("./pages/Admin"));
+const GlobePage = lazy(() => import("./pages/Globe"));
 
-// Loading fallback — planet-themed shimmer
+// Loading fallback — only shows on very first visit before preload completes
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
@@ -27,7 +28,7 @@ function PageLoader() {
   );
 }
 
-type View = "explore" | "facebook" | "admin";
+type View = "explore" | "facebook" | "globe" | "admin";
 
 export default function App() {
   const [view, setView] = useState<View>("explore");
@@ -36,6 +37,30 @@ export default function App() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const preloaded = useRef(false);
+
+  // Preload ALL pages after initial render — uses idle time so it
+  // doesn't slow down the first page. By the time the user taps a tab,
+  // the page is already downloaded and renders instantly.
+  useEffect(() => {
+    if (preloaded.current) return;
+    preloaded.current = true;
+
+    const preload = () => {
+      // Trigger the dynamic imports — browser downloads chunks in background
+      import("./pages/Explore");
+      import("./pages/FacebookGroups");
+      import("./pages/Globe");
+      // Don't preload Admin — it's gated behind PIN and heavy
+    };
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(preload, { timeout: 2000 });
+    } else {
+      setTimeout(preload, 500);
+    }
+  }, []);
 
   const pinCheck = useQuery(
     api.auth.verifyAdminPin,
@@ -44,7 +69,8 @@ export default function App() {
 
   const navItems = useMemo<{ id: View; label: string; icon: string }[]>(
     () => [
-      { id: "explore", label: "Launch Pads", icon: "✅" },
+      { id: "explore", label: "Launch Pads", icon: "\u2705" },
+      { id: "globe", label: "Earth", icon: "\u{1F30D}" },
       { id: "facebook", label: "Sectors", icon: "f" },
     ],
     []
@@ -88,13 +114,19 @@ export default function App() {
   return (
     <TermsAcceptance>
     <div className="min-h-screen bg-ifdark flex flex-col">
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-ifdark/95 backdrop-blur border-b border-ifborder">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button onClick={handleLogoTap} className="w-9 h-9 rounded-xl bg-ifaccent flex items-center justify-center text-ifwhite font-bold text-sm shadow-glow-purple">IF</button>
             <div>
               <h1 className="text-sm font-bold text-iftext">Interplanetary Fund</h1>
-              <p className="text-[10px] text-ifmuted">{view === "admin" ? "Cockpit" : view === "facebook" ? "Outreach Sectors" : "Fuel a cause today"}</p>
+              <p className="text-[10px] text-ifmuted">
+                {view === "admin" ? "Cockpit" :
+                 view === "facebook" ? "Outreach Sectors" :
+                 view === "globe" ? "Global Campaign Locator" :
+                 "Fuel a cause today"}
+              </p>
             </div>
           </div>
           {view === "admin" ? (
@@ -108,6 +140,7 @@ export default function App() {
         </div>
       </header>
 
+      {/* PIN Gate Modal */}
       {showPinGate && (
         <div className="fixed inset-0 z-50 bg-ifdark/95 backdrop-blur flex items-center justify-center">
           <div className="max-w-xs w-full px-6">
@@ -124,14 +157,17 @@ export default function App() {
         </div>
       )}
 
-      <main className="max-w-md mx-auto px-4 py-4 pb-20 min-h-screen flex-1">
+      {/* Content */}
+      <main className={`max-w-md mx-auto px-4 py-4 pb-20 min-h-screen flex-1 ${view === "globe" ? "p-0 max-w-none" : ""}`}>
         <Suspense fallback={<PageLoader />}>
           {view === "explore" && <Explore />}
+          {view === "globe" && <GlobePage />}
           {view === "facebook" && <FacebookGroups />}
           {view === "admin" && <Admin />}
         </Suspense>
       </main>
 
+      {/* Bottom Navigation */}
       {view !== "admin" && !showPinGate && (
         <nav className="sticky bottom-0 z-40 bg-ifdark/95 backdrop-blur border-t border-ifborder">
           <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">

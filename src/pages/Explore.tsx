@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { usePaginatedQuery, useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 const PRESET_AMOUNTS = [5, 10, 25, 50, 100];
@@ -14,7 +14,14 @@ const CASHAPP_URL = `https://cash.app/$${CASHAPP_TAG}`;
 const MIN_AMOUNT = 1;
 
 export default function Explore() {
-  const campaigns = useQuery(api.campaigns.getCampaigns, {});
+  // Paginated campaigns — loads 8 at a time, more on scroll
+  const { results: campaigns, status: campaignStatus, loadMore } = usePaginatedQuery(
+    api.campaigns.getCampaigns,
+    { status: "active" },
+    { initialNumItems: 8 }
+  );
+  // Lightweight stats query — just numbers, no campaign data
+  const stats = useQuery(api.campaigns.getCampaignStats, {});
   const balances = useQuery(api.treasury.aggregateBalances, {});
   const recordDonation = useMutation(api.campaigns.recordDonation);
   const recordInteraction = useMutation(api.interactions.recordInteraction);
@@ -26,7 +33,7 @@ export default function Explore() {
   const [donationStep, setDonationStep] = useState<"amount" | "info" | "processing" | "done">("amount");
   const [viewedCampaigns, setViewedCampaigns] = useState<Set<string>>(new Set());
 
-  if (!campaigns || !balances) {
+  if (campaignStatus === "LoadingFirstPage" || !stats || !balances) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-2 border-ifaccent border-t-transparent rounded-full animate-spin" />
@@ -34,9 +41,10 @@ export default function Explore() {
     );
   }
 
-  const activeCampaigns = campaigns.filter((c: any) => c.status === "active");
-  const totalRaised = (balances.grandTotal?.raised || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.raisedAmount || 0), 0);
-  const totalDonors = (balances.grandTotal?.donors || 0) + activeCampaigns.reduce((s: number, c: any) => s + (c.donorCount || 0), 0);
+  // Stats come from lightweight query, not from loading all campaigns
+  const totalRaised = (balances.grandTotal?.raised || 0) + (stats.totalRaised || 0);
+  const totalDonors = (balances.grandTotal?.donors || 0) + (stats.totalDonors || 0);
+  const activeCount = stats.activeCount || 0;
 
   const numericAmount = parseFloat(donationAmount) || 0;
   const isValidAmount = numericAmount >= MIN_AMOUNT;
@@ -136,13 +144,13 @@ export default function Explore() {
       <div>
         <h3 className="text-sm font-semibold text-iftext mb-3">Active Campaigns</h3>
         <div className="space-y-4">
-          {activeCampaigns.length === 0 && (
+          {campaigns.length === 0 && (
             <div className="card text-center py-8">
               <p className="text-sm text-ifmuted">New campaigns coming soon!</p>
             </div>
           )}
 
-          {activeCampaigns.map((c: any) => {
+          {campaigns.map((c: any) => {
             const progress = c.goalAmount > 0
               ? Math.min(100, Math.round((c.raisedAmount / c.goalAmount) * 100))
               : 0;
@@ -209,10 +217,25 @@ export default function Explore() {
         </div>
       </div>
 
+      {/* Load more campaigns */}
+      {campaignStatus === "CanLoadMore" && (
+        <button
+          onClick={() => loadMore(8)}
+          className="w-full py-3 rounded-xl border border-ifborder text-sm text-iftext font-semibold active:scale-[0.98] transition-transform"
+        >
+          Load more campaigns
+        </button>
+      )}
+      {campaignStatus === "LoadingMore" && (
+        <div className="flex items-center justify-center py-4">
+          <div className="w-6 h-6 border-2 border-ifaccent border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
       {/* Impact stats */}
       <div className="grid grid-cols-2 gap-3 pt-2">
         <div className="card text-center">
-          <p className="text-2xl font-bold text-ifcyan">{activeCampaigns.length}</p>
+          <p className="text-2xl font-bold text-ifcyan">{activeCount}</p>
           <p className="text-[10px] text-ifmuted mt-1">Active campaigns</p>
         </div>
         <div className="card text-center">

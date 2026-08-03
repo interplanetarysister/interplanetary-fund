@@ -5,7 +5,7 @@
  */
 
 import { TermsAcceptance } from "./components/TermsAcceptance";
-import { useState, useMemo, useCallback, lazy, Suspense, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 
@@ -15,7 +15,7 @@ const FacebookGroups = lazy(() => import("./pages/FacebookGroups"));
 const Admin = lazy(() => import("./pages/Admin"));
 const GlobePage = lazy(() => import("./pages/Globe"));
 
-// Loading fallback — only shows on very first visit before preload completes
+// Loading fallback — shows briefly while page chunk downloads on first tap
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20">
@@ -37,30 +37,7 @@ export default function App() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
   const [authed, setAuthed] = useState(false);
-  const preloaded = useRef(false);
 
-  // Preload ALL pages after initial render — uses idle time so it
-  // doesn't slow down the first page. By the time the user taps a tab,
-  // the page is already downloaded and renders instantly.
-  useEffect(() => {
-    if (preloaded.current) return;
-    preloaded.current = true;
-
-    const preload = () => {
-      // Trigger the dynamic imports — browser downloads chunks in background
-      import("./pages/Explore");
-      import("./pages/FacebookGroups");
-      import("./pages/Globe");
-      // Don't preload Admin — it's gated behind PIN and heavy
-    };
-
-    // Use requestIdleCallback if available, otherwise setTimeout
-    if ("requestIdleCallback" in window) {
-      (window as any).requestIdleCallback(preload, { timeout: 2000 });
-    } else {
-      setTimeout(preload, 500);
-    }
-  }, []);
 
   const pinCheck = useQuery(
     api.auth.verifyAdminPin,

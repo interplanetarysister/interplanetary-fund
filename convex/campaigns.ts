@@ -8,13 +8,38 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getCampaigns = query({
-  args: { status: v.optional(v.string()) },
-  handler: async (ctx, { status }) => {
+  args: { 
+    status: v.optional(v.string()),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, { status, paginationOpts }) => {
+    const q = ctx.db.query("monitoredCampaigns");
     if (status) {
-      return await ctx.db.query("monitoredCampaigns")
-        .withIndex("byStatus", (q) => q.eq("status", status)).collect();
+      return await q
+        .withIndex("byStatus", (q) => q.eq("status", status))
+        .order("desc")
+        .paginate(paginationOpts);
     }
-    return await ctx.db.query("monitoredCampaigns").collect();
+    return await q.order("desc").paginate(paginationOpts);
+  },
+});
+
+// Keep a lightweight version for stats only — no campaign data, just counts
+export const getCampaignStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const active = await ctx.db.query("monitoredCampaigns")
+      .withIndex("byStatus", (q) => q.eq("status", "active"))
+      .collect();
+    
+    const totalRaised = active.reduce((sum, c) => sum + (c.raisedAmount || 0), 0);
+    const totalDonors = active.reduce((sum, c) => sum + (c.donorCount || 0), 0);
+    
+    return {
+      activeCount: active.length,
+      totalRaised,
+      totalDonors,
+    };
   },
 });
 

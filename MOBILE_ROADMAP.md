@@ -19,8 +19,8 @@
 
 ## What's Missing
 
-❌ App icons (192px + 512px) — needed for both PWA and store listings
-❌ Android native project (npx cap add android) — requires Android SDK
+✅ App icons generated (192px, 512px, 180px, 1024px, favicon) — afro-punk comic book style
+⏳ Android native project (npx cap add android) — requires Android SDK + JDK 17
 ❌ iOS native project (npx cap add ios) — requires macOS + Xcode
 ❌ App signing keystore (for Google Play release builds)
 ❌ Apple Developer account ($99/year)
@@ -35,9 +35,9 @@
 - [x] Web app deployed on Vercel
 - [x] PWA manifest configured
 - [x] Mobile-first responsive design
-- [ ] Generate app icons (192px + 512px + apple-touch-icon)
-- [ ] Add apple-touch-icon meta tags to index.html
-- [ ] Test PWA install on Galaxy A16
+- [x] Generate app icons (192px + 512px + 180px + 1024px) ✅
+- [x] Add apple-touch-icon meta tags to index.html ✅
+- [ ] Test PWA install on Galaxy A16 (pending Michelle testing)
 - Result: Users can "Add to Home Screen" for app-like experience
 - Cost: $0
 
@@ -77,6 +77,17 @@
 - Result: App available on Apple App Store
 - Cost: $99/year
 - Requirement: macOS computer with Xcode
+
+## Essential Build Instructions
+
+See MOBILE_BUILD.md for complete step-by-step build commands including:
+- One-time Capacitor setup (npm install, npx cap add android/ios)
+- Build & sync workflow (npm run build → npx cap sync → npx cap open)
+- APK production (Android Studio, command line, or Base44)
+- Environment configuration (dev, production, mobile)
+- App update workflow
+
+Do NOT delete MOBILE_BUILD.md — it contains essential architecture creation steps.
 
 ## Technical Architecture (Already Built)
 

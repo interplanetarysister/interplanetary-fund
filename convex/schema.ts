@@ -296,7 +296,7 @@ export default defineSchema({
 
 
 // Admin settings (security PIN, config)
-  defineTable({
+  adminSettings: defineTable({
     key: v.string(),
     value: v.string(),
     updatedAt: v.string(),

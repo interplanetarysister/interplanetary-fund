@@ -6,6 +6,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
+import type { AdminUser } from "../types";
+import PermissionsManager from "../components/PermissionsManager";
 import { api } from "../../convex/_generated/api";
 
 type AdminTab =
@@ -15,9 +17,22 @@ type AdminTab =
   | "treasury"
   | "platforms"
   | "reports"
-  | "interactions";
+  | "interactions"
+  | "permissions";
 
-const TABS: { id: AdminTab; label: string }[] = [
+// Each tab maps to a permission scope (or "all" for super admin)
+const TAB_PERMISSIONS: Record<AdminTab, string> = {
+  overview: "all",
+  campaigns: "campaigns",
+  agents: "all",       // agent management is super-admin only
+  treasury: "finance",
+  platforms: "platforms",
+  reports: "reports",
+  interactions: "reports",
+  permissions: "users",  // only super admin
+};
+
+const ALL_TABS: { id: AdminTab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "campaigns", label: "Campaigns" },
   { id: "agents", label: "Agents" },
@@ -25,6 +40,7 @@ const TABS: { id: AdminTab; label: string }[] = [
   { id: "platforms", label: "Platforms" },
   { id: "reports", label: "Reports" },
   { id: "interactions", label: "Activity" },
+  { id: "permissions", label: "Access" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -37,7 +53,18 @@ const ROLE_COLORS: Record<string, string> = {
   platform_sync: "badge-green",
 };
 
-export default function Admin() {
+export default function Admin({ adminUser }: { adminUser: { name: string; role: string; permissions: string[] } | null }) {
+  const isSuperAdmin = adminUser?.role === "super_admin";
+  const userPermissions = adminUser?.permissions || [];
+  
+  const hasPermission = (perm: string) => {
+    if (isSuperAdmin) return true;
+    if (perm === "all") return false;
+    return userPermissions.includes(perm);
+  };
+  
+  // Filter tabs based on permissions
+  const TABS = ALL_TABS.filter(t => hasPermission(TAB_PERMISSIONS[t.id]));
   const [tab, setTab] = useState<AdminTab>("overview");
 
   // Shared queries
@@ -57,7 +84,7 @@ export default function Admin() {
   const [payoutDest, setPayoutDest] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [depositPlatform, setDepositPlatform] = useState("GoFundMe");
-  const [adminUser, setAdminUser] = useState("user1");
+  const [treasuryUser, setTreasuryUser] = useState("user1");
   const [showResult, setShowResult] = useState<any>(null);
 
   // Platforms form state
@@ -135,6 +162,15 @@ export default function Admin() {
       </div>
 
       {/* Tab selector */}
+      {/* Admin identity badge */}
+      <div className="flex items-center gap-2 text-xs text-ifmuted">
+        <span className="px-2 py-0.5 rounded-full bg-ifaccent/20 text-ifaccent font-medium text-[10px]">
+          {isSuperAdmin ? "SUPER ADMIN" : "ADMIN"}
+        </span>
+        <span>{adminUser?.name || "Admin"} — Tap "Exit" to return</span>
+      </div>
+
+      {/* Tab selector — only shows permitted tabs */}
       <div className="flex gap-1 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
         {TABS.map((t) => (
           <button
@@ -509,8 +545,8 @@ export default function Admin() {
             <input
               type="text"
               placeholder="User ID"
-              value={adminUser}
-              onChange={(e) => setAdminUser(e.target.value)}
+              value={treasuryUser}
+              onChange={(e) => setTreasuryUser(e.target.value)}
               className="input mb-2"
             />
             <input
@@ -891,6 +927,17 @@ export default function Admin() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+
+      {/* ============ PERMISSIONS / ACCESS CONTROL ============ */}
+      {tab === "permissions" && isSuperAdmin && (
+        <PermissionsManager adminPin={adminUser?.name || ""} />
+      )}
+      {tab === "permissions" && !isSuperAdmin && (
+        <div className="card text-center py-8">
+          <p className="text-sm text-ifmuted">Access denied. Super admin only.</p>
         </div>
       )}
 

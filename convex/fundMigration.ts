@@ -179,6 +179,7 @@ export const getMigrationHistory = query({
 // Batch migrate funds from multiple external platforms at once
 export const batchMigrate = mutation({
   args: {
+    adminPin: v.optional(v.string()),
     migrations: v.array(v.object({
       campaignId: v.string(),
       campaignTitle: v.string(),

@@ -37,10 +37,11 @@ export default function App() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
   const [authed, setAuthed] = useState(false);
+  const [adminUser, setAdminUser] = useState<{name: string; role: string; permissions: string[]} | null>(null);
 
 
   const pinCheck = useQuery(
-    api.auth.verifyAdminPin,
+    api.adminUsers.authenticateAdmin,
     showPinGate && pinInput.length >= 4 ? { pin: pinInput } : "skip"
   );
 
@@ -67,6 +68,11 @@ export default function App() {
   const handlePinSubmit = useCallback(() => {
     if (pinCheck?.valid === true) {
       setAuthed(true);
+      setAdminUser({
+        name: pinCheck.name || "Admin",
+        role: pinCheck.role || "admin",
+        permissions: pinCheck.permissions || [],
+      });
       setView("admin");
       setShowPinGate(false);
       setPinInput("");
@@ -80,6 +86,7 @@ export default function App() {
   const exitAdmin = useCallback(() => {
     setView("explore");
     setAuthed(false);
+    setAdminUser(null);
   }, []);
 
   const closePinGate = useCallback(() => {
@@ -99,7 +106,7 @@ export default function App() {
             <div>
               <h1 className="text-sm font-bold text-iftext">Interplanetary Fund</h1>
               <p className="text-[10px] text-ifmuted">
-                {view === "admin" ? "Cockpit" :
+                {view === "admin" ? `Cockpit — ${adminUser?.name || ""}` :
                  view === "facebook" ? "Outreach Sectors" :
                  view === "globe" ? "Global Campaign Locator" :
                  "Fuel a cause today"}
@@ -140,7 +147,7 @@ export default function App() {
           {view === "explore" && <Explore />}
           {view === "globe" && <GlobePage />}
           {view === "facebook" && <FacebookGroups />}
-          {view === "admin" && <Admin />}
+          {view === "admin" && <Admin adminUser={adminUser} />}
         </Suspense>
       </main>
 

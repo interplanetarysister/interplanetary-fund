@@ -294,6 +294,18 @@ export default defineSchema({
   }).index("byCampaignId", ["campaignId"]).index("byPlatform", ["platform"]).index("byStatus", ["status"]),
 
 
+  // ADMIN USERS — role-based access control
+  adminUsers: defineTable({
+    name: v.string(),
+    email: v.string(),
+    pin: v.string(),
+    role: v.string(),          // "super_admin" | "admin"
+    permissions: v.array(v.string()),  // ["finance", "campaigns", "platforms", "content", "settings", "reports"]
+    active: v.boolean(),
+    createdBy: v.string(),
+    createdAt: v.string(),
+    lastLoginAt: v.optional(v.string()),
+  }).index("byPin", ["pin"]).index("byEmail", ["email"]),
 
 // Admin settings (security PIN, config)
   adminSettings: defineTable({

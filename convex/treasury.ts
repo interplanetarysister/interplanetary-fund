@@ -271,8 +271,12 @@ export const completePayout = mutation({
   args: {
     payoutId: v.id("payoutRequests"),
     transactionId: v.optional(v.string()),
+    adminPin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    if (args.adminPin) {
+      await requirePermission(ctx, args.adminPin, "finance");
+    }
     checkRateLimit("payout_complete", 5, 300000);
     const payout = await ctx.db.get(args.payoutId);
     if (!payout) throw new Error("Payout request not found");
@@ -309,6 +313,7 @@ export const updateFeeConfig = mutation({
     processingFeePercent: v.number(),
     processingFeeFlat: v.number(),
     updatedBy: v.string(),
+    adminPin: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Deactivate existing configs

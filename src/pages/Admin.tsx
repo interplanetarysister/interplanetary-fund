@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import type { AdminUser } from "../types";
 import PermissionsManager from "../components/PermissionsManager";
+import FraudControl from "../components/FraudControl";
 import { api } from "../../convex/_generated/api";
 
 type AdminTab =
@@ -30,6 +31,7 @@ const TAB_PERMISSIONS: Record<AdminTab, string> = {
   reports: "reports",
   interactions: "reports",
   permissions: "users",  // only super admin
+  control: "finance",  // super admin only — fraud prevention
 };
 
 const ALL_TABS: { id: AdminTab; label: string }[] = [
@@ -41,6 +43,7 @@ const ALL_TABS: { id: AdminTab; label: string }[] = [
   { id: "reports", label: "Reports" },
   { id: "interactions", label: "Activity" },
   { id: "permissions", label: "Access" },
+  { id: "control", label: "Control" },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -930,6 +933,16 @@ export default function Admin({ adminUser }: { adminUser: { name: string; role: 
         </div>
       )}
 
+
+      {/* ============ FRAUD CONTROL ============ */}
+      {tab === "control" && isSuperAdmin && (
+        <FraudControl />
+      )}
+      {tab === "control" && !isSuperAdmin && (
+        <div className="card text-center py-8">
+          <p className="text-sm text-ifmuted">Access denied. Super admin only.</p>
+        </div>
+      )}
 
       {/* ============ PERMISSIONS / ACCESS CONTROL ============ */}
       {tab === "permissions" && isSuperAdmin && (

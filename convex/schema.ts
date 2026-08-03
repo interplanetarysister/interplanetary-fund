@@ -66,6 +66,12 @@ export default defineSchema({
     externalRaised: v.optional(v.number()),
     externalDonors: v.optional(v.number()),
     platformCount: v.optional(v.number()),
+    frozen: v.optional(v.boolean()),
+    frozenReason: v.optional(v.string()),
+    frozenAt: v.optional(v.string()),
+    ownershipProofStatus: v.optional(v.string()),
+    ownershipProofNotes: v.optional(v.string()),
+    ownershipProofRequestedAt: v.optional(v.string()),
   }).index("byIfId", ["ifCampaignId"]).index("byStatus", ["status"]),
 
   // PROTOCOL REPORTS
@@ -115,6 +121,7 @@ export default defineSchema({
     totalPaidOut: v.number(),
     pendingPayouts: v.number(),
     lastUpdated: v.string(),
+    frozen: v.optional(v.boolean()),
   }).index("byUserId", ["userId"]),
 
   // PAYOUT REQUESTS
@@ -129,6 +136,10 @@ export default defineSchema({
     requestedDate: v.string(),
     completedDate: v.optional(v.string()),
     transactionId: v.optional(v.string()),
+    adminReviewStatus: v.optional(v.string()),
+    adminReviewNote: v.optional(v.string()),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.string()),
   }).index("byUserId", ["userId"]).index("byStatus", ["status"]),
 
   // TRANSACTIONS

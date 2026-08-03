@@ -213,6 +213,11 @@ export const requestPayout = mutation({
       throw new Error("Insufficient balance");
     }
 
+    // FRAUD CHECK — block payouts for frozen accounts
+    if (account.frozen) {
+      throw new Error("Account is frozen. Contact support.");
+    }
+
     const feeConfigs = await ctx.db.query("feeConfig").filter((q) => q.eq("active", true)).first();
     const platformFeePercent = feeConfigs?.platformFeePercent ?? 5;
     const processingFeePercent = feeConfigs?.processingFeePercent ?? 2.9;
@@ -275,12 +280,22 @@ export const completePayout = mutation({
   },
   handler: async (ctx, args) => {
     if (args.adminPin) {
-      await requirePermission(ctx, args.adminPin, "finance");
+      await requireSuperAdmin(ctx, args.adminPin);
     }
     checkRateLimit("payout_complete", 5, 300000);
     const payout = await ctx.db.get(args.payoutId);
     if (!payout) throw new Error("Payout request not found");
     if (payout.status !== "pending") throw new Error(`Payout already ${payout.status}`);
+    // SUPER ADMIN APPROVAL REQUIRED — no payout can complete without explicit approval
+    if (payout.adminReviewStatus !== "approved") {
+      throw new Error("Payout requires super admin approval before completion. Use the Fraud Control panel to approve.");
+    }
+    if (payout.adminReviewStatus === "denied") {
+      throw new Error("Payout was denied by super admin.");
+    }
+    if (payout.adminReviewStatus === "frozen") {
+      throw new Error("Payout is frozen due to campaign freeze. Unfreeze the campaign first.");
+    }
 
     await ctx.db.patch(args.payoutId, {
       status: "completed",

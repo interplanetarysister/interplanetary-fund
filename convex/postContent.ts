@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 const BUSINESS_EMAIL = "interplanetarysister@gmail.com";
@@ -107,7 +107,6 @@ export const fixMissingPayPalLinks = mutation({
 // Daily auto-generation of post content for all active campaigns.
 // Generates empathetic posts with PayPal donate links and stores them as pending.
 
-import { internalMutation } from "./_generated/server";
 
 export const autoGeneratePosts = internalMutation({
   args: {},

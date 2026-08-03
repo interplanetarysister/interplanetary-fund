@@ -24,7 +24,7 @@
 ❌ iOS native project (npx cap add ios) — requires macOS + Xcode
 ❌ App signing keystore (for Google Play release builds)
 ❌ Apple Developer account ($99/year)
-❌ Google Play Developer account ($25 one-time)
+⏳ Google Play Developer account — account created, awaiting Google approval
 ❌ Privacy Policy URL (required by both stores — we have the doc, need hosted URL)
 ❌ App store screenshots
 ❌ App store descriptions and metadata
@@ -52,7 +52,8 @@
 - Cost: $0 (just dev tools)
 
 ### Phase 3: Google Play Store (When Ready — $25)
-- [ ] Create Google Play Developer account ($25 one-time fee)
+- [x] Google Play Developer account created ✅ (awaiting Google approval)
+- [ ] Wait for Google account verification to complete
 - [ ] Generate release signing keystore
 - [ ] Build signed AAB (Android App Bundle — required by Google Play)
 - [ ] Create store listing:

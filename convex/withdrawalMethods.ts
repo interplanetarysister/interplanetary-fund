@@ -242,7 +242,7 @@ export const auditStripeUsage = query({
     );
 
     return {
-      stripeUsed: stripePayouts.length === 0 && stripeTransactions.length === 0,
+      stripeUsed: stripePayouts.length > 0 || stripeTransactions.length > 0,
       auditDate: new Date().toISOString(),
       totalPayouts: allPayouts.length,
       stripePayouts: stripePayouts.length,

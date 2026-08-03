@@ -10,9 +10,8 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import App from "./App";
 import "./index.css";
 
-const convex = new ConvexReactClient(
-  import.meta.env.VITE_CONVEX_URL ?? "https://placeholder.convex.cloud"
-);
+const convexUrl = import.meta.env.VITE_CONVEX_URL ?? "https://placeholder.convex.cloud";
+const convex = new ConvexReactClient(convexUrl);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

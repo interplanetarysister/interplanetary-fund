@@ -10,14 +10,36 @@ import { internal } from "./_generated/api";
 // =====================================================
 // SCHEDULED JOBS (Credit-Free — runs as Convex cron)
 // =====================================================
-// All times in UTC. Pacific is UTC-7 (PDT) or UTC-8 (PST).
-// 6am Pacific = 13:00 UTC (during PDT)
-// Saturday 2am Pacific = 09:00 UTC Saturday (during PDT)
-// 8am Pacific = 15:00 UTC (during PDT) — daily post generation
+// Persistent agent orchestration is deliberately hosted in Convex so it does
+// not depend on a browser session being open. Agent lanes poll independently.
 
 const crons = cronJobs();
 
-// Daily Protocol Enforcement — 6am Pacific (13:00 UTC)
+// Agent 2 — every 5 minutes.
+crons.interval(
+  "agent-2-persistent-work-poll",
+  { minutes: 5 },
+  internal.agentScheduler.pollGithub,
+  { lane: "agent-2" }
+);
+
+// Agent 1 — every 10 minutes.
+crons.interval(
+  "agent-1-persistent-work-poll",
+  { minutes: 10 },
+  internal.agentScheduler.pollGithub,
+  { lane: "agent-1" }
+);
+
+// Agent 3 — every 15 minutes.
+crons.interval(
+  "agent-3-persistent-work-poll",
+  { minutes: 15 },
+  internal.agentScheduler.pollGithub,
+  { lane: "agent-3" }
+);
+
+// Daily Protocol Enforcement — 6am Pacific (13:00 UTC during PDT).
 crons.daily(
   "daily-protocol-enforcement",
   { hourUTC: 13, minuteUTC: 0 },
@@ -25,7 +47,7 @@ crons.daily(
   {}
 );
 
-// Weekly Training — Saturday 2am Pacific (09:00 UTC Saturday)
+// Weekly Training — Saturday 2am Pacific (09:00 UTC during PDT).
 crons.weekly(
   "weekly-training-session",
   { dayOfWeek: "saturday", hourUTC: 9, minuteUTC: 0 },
@@ -33,9 +55,7 @@ crons.weekly(
   {}
 );
 
-// Daily Auto-Post Generation — 8am Pacific (15:00 UTC)
-// Generates empathetic posts with PayPal links for all active campaigns
-// Posts are stored as "pending" in distributedPosts for agents to publish
+// Daily Auto-Post Generation — 8am Pacific (15:00 UTC during PDT).
 crons.daily(
   "daily-post-generation",
   { hourUTC: 15, minuteUTC: 0 },

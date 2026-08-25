@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 215 28% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary: 217 91% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 40% 96%;
+    --secondary-foreground: 222 40% 16%;
+    --muted: 214 40% 96%;
+    --muted-foreground: 217 16% 47%;
+    --accent: 214 40% 96%;
+    --accent-foreground: 222 40% 16%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 55%;
+    --chart-1: 217 91% 55%;
+    --chart-2: 189 94% 48%;
+    --chart-3: 262 83% 63%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 226 71% 40%;
+    --radius: 0.5rem;
+    --font-heading: 'Fraunces', ui-serif, serif;
+    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Fraunces', ui-serif, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sidebar-background: 229 45% 7%;
+    --sidebar-foreground: 214 40% 90%;
+    --sidebar-primary: 189 94% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 229 40% 14%;
+    --sidebar-accent-foreground: 214 40% 96%;
+    --sidebar-border: 229 35% 18%;
+    --sidebar-ring: 189 94% 48%;
+  }
+
+  .dark {
+    --background: 229 45% 7%;
+    --foreground: 210 40% 98%;
+    --card: 215 28% 14%;
+    --card-foreground: 210 40% 98%;
+    --popover: 215 28% 14%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 20%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 28% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 215 28% 20%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 28% 24%;
+    --input: 215 28% 24%;
+    --ring: 199 89% 48%;
+    --chart-1: 199 89% 48%;
+    --chart-2: 187 85% 43%;
+    --chart-3: 174 60% 51%;
+    --chart-4: 210 80% 56%;
+    --chart-5: 215 25% 65%;
+    --sidebar-background: 215 28% 10%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 28% 18%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 215 28% 20%;
+    --sidebar-ring: 199 89% 48%;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  /* Android WebView readiness: kill default rubber-band / scroll-chaining on
+     the page and main scroll areas. PullToRefresh sets its own overscroll
+     inline on its container, so it keeps working. */
+  html, body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Android WebView: keep taps instant and never let a tap-highlight box
+     appear mid-scroll. touch-action: manipulation removes the 300ms delay
+     while leaving normal vertical panning intact. */
+  button, a, [role="tab"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Android WebView readiness: suppress the long-press text-selection menu and
+     magnification highlight on tap targets and UI chrome (buttons, links, nav
+     tabs, icons, headings), while keeping body content — campaign stories,
+     descriptions, and notification text — copyable. */
+  button,
+  a,
+  nav,
+  [role="tab"],
+  svg,
+  h1, h2, h3, h4, h5, h6 {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  p, li, blockquote {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Interplanetary Fund visual language: deep space surfaces, soft glows,
+   glassmorphism, and premium transitions. */
+@layer components {
+  .deep-space {
+    background-image: radial-gradient(120% 100% at 15% 0%, hsl(262 83% 24% / 0.55) 0%, transparent 55%),
+      radial-gradient(90% 80% at 95% 10%, hsl(189 94% 40% / 0.35) 0%, transparent 55%),
+      linear-gradient(160deg, hsl(229 45% 7%) 0%, hsl(232 47% 5%) 100%);
+  }
+
+  .glass-panel {
+    @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+  }
+
+  .brand-gradient-text {
+    @apply bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 24px hsl(217 91% 55% / 0.35);
+  }
+}
+
+@layer utilities {
+  /* Device safe areas — status bar, Dynamic Island, home indicator, rounded corners. */
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe { padding-left: env(safe-area-inset-left); }
+  .pr-safe { padding-right: env(safe-area-inset-right); }
+  .mt-safe { margin-top: env(safe-area-inset-top); }
+  .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+  .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
+  .h-dvh { height: 100vh; height: 100dvh; }
+
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  @keyframes brand-fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-up {
+    animation: brand-fade-up 0.5s ease-out both;
+  }
+}

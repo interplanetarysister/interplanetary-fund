@@ -1,94 +1,50 @@
 # Interplanetary Fund
 
-Credit-free fundraising platform with AI agent coordination, protocol enforcement, and treasury management.
+**Purpose: Migration**
 
-## Quick Start
+Historical/reference repository for the single Interplanetary Fund product. It is retained for capability recovery and migration auditing, not as an independent production product.
 
-```bash
-npm install
-cp .env.example .env.local  # Set VITE_CONVEX_URL
-npm run dev                  # Start frontend + Convex
-```
+## Product Build Contract
 
-## Architecture
+Interplanetary Fund is **one cohesive product implemented across coordinated repositories**. Repositories are implementation boundaries, not separate products.
 
-- **Frontend**: React + Vite + Tailwind (mobile-first, Galaxy A16 optimized)
-- **Backend**: Convex (serverless, real-time WebSocket, credit-free)
-- **Mobile**: Capacitor wrapper for Android APK & iOS
-- **Hosting**: Vercel (web), Base44 (APK production)
-- **Source**: This GitHub repository is the single source of truth
+### Repository purposes
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system diagram.
+| Repository | Purpose | Authority |
+|---|---|---|
+| `interplanetarysister/InterplanetaryFund` | **Frontend** | User-facing React/Vite application |
+| `interplanetarysister/interplanetary-fund-backend` | **Backend** | Backend, admin, agents, security, treasury, operations |
+| `interplanetarysister/interplanetary-fund` | **Migration** | Historical/reference source until every unique capability is reconciled |
 
-## Connections
+### Build-agent rule
 
-| Service | Purpose | Connected Via |
-|---------|---------|---------------|
-| GitHub | Source code + Copilot | This repo |
-| Vercel | Web hosting | Auto-deploy from GitHub main branch |
-| Convex | Backend + database | `VITE_CONVEX_URL` env var |
-| Base44 | APK production | Backend function syncs Convex → Base44 entities |
-| Copilot | AI code assistant | `.github/copilot-instructions.md` |
+Every build agent, workflow, Copilot/Codex task, and human implementation must treat the three repositories as **one product**. Before changing code, identify the repository purpose and determine whether the capability is frontend-only, backend/operations-only, or cross-repository.
+
+For cross-repository work, compare this repository's historical implementation against the canonical repositories and migrate unique production-relevant capability to its proper canonical destination. Do not introduce competing production sources of truth.
+
+Live campaigns, users, donations, permissions, agent state, administrative state, and other business entities must retain one canonical live identity in the authoritative backend.
+
+### Migration destinations
+
+- User-facing React/Vite functionality → `interplanetarysister/InterplanetaryFund` (**Frontend**)
+- Backend, Convex, admin, agents, security, treasury, and operations → `interplanetarysister/interplanetary-fund-backend` (**Backend**)
+- Historical/reference material remains here only until capability-by-capability reconciliation is complete.
+
+### Migration safety rules
+
+- Preserve stable business/entity IDs and contracts.
+- Do not copy secrets or credentials into source control.
+- Do not create a second production database or competing campaign store.
+- Compare behavior before migrating functionality.
+- Verify imports, schemas, APIs, permissions, environment variables, and deployment configuration after migration.
+- Do not delete or archive this repository until all unique production-relevant capabilities are migrated or intentionally retired.
 
 ## Build Commands
 
 ```bash
-# Web development
-npm run dev          # Local dev server + Convex
-npm run build        # Production build to dist/
-npm run preview      # Preview production build
-
-# Convex backend
-npx convex dev       # Run backend locally
-npx convex deploy    # Deploy backend to cloud
-
-# Mobile app
-npm run cap:sync     # Build web + sync to native
-npm run cap:android  # Open Android Studio
-npm run cap:ios      # Open Xcode (macOS)
-npm run mobile:build:apk  # Build debug APK from command line
+npm install
+npm run dev
+npm run build
 ```
 
-See [MOBILE_BUILD.md](./MOBILE_BUILD.md) for full mobile build instructions.
-
-## Environment Variables
-
-```bash
-# .env.local (development)
-VITE_CONVEX_URL=https://rosy-butterfly-2.convex.cloud
-
-# Vercel (production) — set in dashboard or CLI
-VITE_CONVEX_URL=https://rosy-butterfly-2.convex.cloud
-
-# GitHub Actions (CI/CD) — set as repository secrets
-VITE_CONVEX_URL=<your-convex-url>
-CONVEX_DEPLOY_KEY=<your-convex-deploy-key>
-```
-
-## Convex Backend
-
-8 tables, 7 agents, protocol enforcement (P-1 through P-8), treasury management, and scheduled crons.
-
-| File | Description |
-|------|-------------|
-| `convex/schema.ts` | Database schema (8 tables) |
-| `convex/agents.ts` | Agent CRUD, stats, training |
-| `convex/campaigns.ts` | Campaign sync, platforms |
-| `convex/treasury.ts` | Fees, payouts, balances |
-| `convex/protocol.ts` | P-1 through P-8 enforcement |
-| `convex/crons.ts` | Daily audit + weekly training |
-| `convex/seed.ts` | Initial data seeding |
-
-## Base44 Sync
-
-`base44-sync/syncConvexData.ts` — Backend function deployed on Base44 that syncs Convex data into Base44 entities. This allows the Base44-built APK to display live Convex data.
-
-Actions:
-- `sync_agents` — Sync 7 agents to Base44 Agent entity
-- `sync_campaigns` — Sync campaigns to Base44 MonitoredCampaign entity
-- `sync_treasury` — Fetch treasury balances and agent stats
-- `full_sync` — Sync everything at once
-
-## License
-
-MIT
+See `MIGRATION_MANIFEST.md` and `PRODUCT_SYSTEM_CONTRACT.md` for the authoritative migration and product rules.

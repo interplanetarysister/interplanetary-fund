@@ -10,7 +10,6 @@ import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import TempAdminAccessGate from "./components/TempAdminAccessGate";
 
-// Lazy load pages
 const Explore = lazy(() => import("./pages/Explore"));
 const FacebookGroups = lazy(() => import("./pages/FacebookGroups"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -100,7 +99,7 @@ export default function App() {
 
   return (
     <TermsAcceptance>
-      <div className="min-h-screen bg-ifdark flex flex-col">
+      <div className="min-h-screen bg-ifdark">
         <header className="sticky top-0 z-40 bg-ifdark/95 backdrop-blur border-b border-ifborder">
           <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -155,7 +154,7 @@ export default function App() {
           </div>
         )}
 
-        <main className={`max-w-md mx-auto px-4 py-4 pb-20 min-h-screen flex-1 ${view === "globe" ? "p-0 max-w-none" : ""}`}>
+        <main className={`max-w-md mx-auto px-4 py-4 pb-24 ${view === "globe" ? "p-0 max-w-none pb-24" : ""}`}>
           <Suspense fallback={<PageLoader />}>
             {view === "explore" && <Explore />}
             {view === "globe" && <GlobePage />}
@@ -165,7 +164,7 @@ export default function App() {
         </main>
 
         {view !== "admin" && !showPinGate && !showTempGate && (
-          <nav className="sticky bottom-0 z-40 bg-ifdark/95 backdrop-blur border-t border-ifborder">
+          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-ifdark/95 backdrop-blur border-t border-ifborder">
             <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">
               {navItems.map((item) => (
                 <button key={item.id} onClick={() => setView(item.id)} className={`nav-item ${view === item.id ? "nav-item-active" : "nav-item-inactive"}`}>

@@ -23,7 +23,10 @@ function isPlaceholderOrInvalidUrl(value: string | undefined): boolean {
 
   try {
     const parsed = new URL(url);
-    return parsed.protocol !== "http:" && parsed.protocol !== "https:";
+    return (
+      (parsed.protocol !== "http:" && parsed.protocol !== "https:") ||
+      !parsed.hostname
+    );
   } catch {
     return true;
   }
@@ -40,13 +43,10 @@ export const cleanupPlaceholderUrls = mutation({
     for (const platform of platforms) {
       const url = platform.externalUrl?.trim() ?? "";
       if (isPlaceholderOrInvalidUrl(url)) {
-        await ctx.db.patch(platform._id, {
-          externalUrl: "",
-          status: "draft",
-        });
+        await ctx.db.patch(platform._id, { externalUrl: "", status: "draft" });
         cleaned.push({
           id: platform._id,
-          platform: platform.platformName,
+          platform: platform.platform,
           oldUrl: url,
           status: "draft",
         });
@@ -72,7 +72,7 @@ export const fixPlatformStatuses = mutation({
       if (isPlaceholderOrInvalidUrl(platform.externalUrl)) {
         await ctx.db.patch(platform._id, { status: "draft" });
         fixed.push({
-          platform: platform.platformName,
+          platform: platform.platform,
           campaign: platform.campaignId,
           reason: "Missing, placeholder, or invalid HTTP(S) URL",
         });

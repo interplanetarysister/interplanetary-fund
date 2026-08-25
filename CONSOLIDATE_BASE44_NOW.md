@@ -1,0 +1,1 @@
+Trigger Base44 source consolidation. Source repository is public and accessible: interplanetarysister/interplanetaryfund-base44. Preserve the source under base44-source/ for capability reconciliation; do not delete or retire the source yet.

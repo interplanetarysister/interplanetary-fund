@@ -1,4 +1,8 @@
-# Interplanetary Fund
+# ✨🌟 Interplanetary Fund — ARCHIVAL / MIGRATION REFERENCE 🌟✨
+
+> **✨ ARCHIVAL CANDIDATE — DO NOT USE AS A NEW PRODUCTION SOURCE OF TRUTH. ✨**
+>
+> Unique production-relevant capabilities must be reconciled into the canonical repositories before this repository is finally archived.
 
 **Purpose: Migration**
 

@@ -7,15 +7,30 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
+/**
+ * The former mock discovery implementation created every simulated Facebook
+ * group with a deterministic `fb_group_<timestamp>_<index>` identifier. Real
+ * Facebook group IDs are provider-issued, so this prefix is reliable legacy
+ * provenance and must never be presented as production Facebook activity.
+ */
+function isLegacySimulatedFacebookRecord(record: any) {
+  return typeof record?.groupFacebookId === "string" && record.groupFacebookId.startsWith("fb_group_");
+}
+
 /** Facebook outreach remains read-only until a real Facebook OAuth/Graph API connection is configured. */
 export default function FacebookGroups() {
-  const dashboard = useQuery(api.facebook.getOutreachDashboard, {});
   const allGroups = useQuery(api.facebook.getAllDiscoveredGroups, {});
   const allPosts = useQuery(api.facebook.getAllPosts, {});
 
-  if (!dashboard || !allGroups || !allPosts) {
+  if (!allGroups || !allPosts) {
     return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-2 border-ifaccent border-t-transparent rounded-full animate-spin" /></div>;
   }
+
+  const recordedGroups = allGroups.groups.filter((group: any) => !isLegacySimulatedFacebookRecord(group));
+  const recordedPosts = allPosts.posts.filter((post: any) => !isLegacySimulatedFacebookRecord(post));
+  const joinedGroups = recordedGroups.filter((group: any) => group.joinStatus === "joined");
+  const postedPosts = recordedPosts.filter((post: any) => post.postStatus === "posted");
+  const recordedReach = recordedGroups.reduce((sum: number, group: any) => sum + (Number(group.memberCount) || 0), 0);
 
   return (
     <div className="space-y-5">
@@ -26,10 +41,10 @@ export default function FacebookGroups() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="card text-center"><p className="text-2xl font-bold text-ifcyan">{dashboard.groups.total}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Groups</p></div>
-        <div className="card text-center"><p className="text-2xl font-bold text-ifgreen">{dashboard.groups.joined}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Joined</p></div>
-        <div className="card text-center"><p className="text-2xl font-bold text-ifaccent">{dashboard.posts.posted}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Posts</p></div>
-        <div className="card text-center"><p className="text-2xl font-bold text-ifyellow">{dashboard.groups.totalReach.toLocaleString()}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Reach</p></div>
+        <div className="card text-center"><p className="text-2xl font-bold text-ifcyan">{recordedGroups.length}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Groups</p></div>
+        <div className="card text-center"><p className="text-2xl font-bold text-ifgreen">{joinedGroups.length}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Joined</p></div>
+        <div className="card text-center"><p className="text-2xl font-bold text-ifaccent">{postedPosts.length}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Posts</p></div>
+        <div className="card text-center"><p className="text-2xl font-bold text-ifyellow">{recordedReach.toLocaleString()}</p><p className="text-[10px] text-ifmuted mt-1">Recorded Reach</p></div>
       </div>
 
       <div className="card">
@@ -42,9 +57,9 @@ export default function FacebookGroups() {
         </ul>
       </div>
 
-      {allGroups.groups.length > 0 && <div><h3 className="text-sm font-semibold text-iftext mb-3">Previously recorded groups</h3><div className="space-y-2">{allGroups.groups.slice(0,25).map((g:any)=><div key={g._id} className="card flex items-center justify-between gap-3"><div><p className="text-sm font-semibold text-iftext">{g.groupName}</p><p className="text-[10px] text-ifmuted mt-1">{g.memberCount.toLocaleString()} members · {g.groupCategory}</p></div><span className="text-[10px] font-semibold text-ifmuted">{g.joinStatus}</span></div>)}</div></div>}
+      {recordedGroups.length > 0 && <div><h3 className="text-sm font-semibold text-iftext mb-3">Previously recorded groups</h3><div className="space-y-2">{recordedGroups.slice(0,25).map((g:any)=><div key={g._id} className="card flex items-center justify-between gap-3"><div><p className="text-sm font-semibold text-iftext">{g.groupName}</p><p className="text-[10px] text-ifmuted mt-1">{g.memberCount.toLocaleString()} members · {g.groupCategory}</p></div><span className="text-[10px] font-semibold text-ifmuted">{g.joinStatus}</span></div>)}</div></div>}
 
-      {allPosts.posts.length > 0 && <div><h3 className="text-sm font-semibold text-iftext mb-3">Recorded posts</h3><div className="space-y-2">{allPosts.posts.slice(0,10).map((p:any)=><div key={p._id} className="card"><div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-iftext">{p.groupName}</span><span className="text-[10px] font-semibold text-ifmuted">{p.postStatus}</span></div><p className="text-xs text-ifmuted mt-2 line-clamp-2">{p.postContent}</p></div>)}</div></div>}
+      {recordedPosts.length > 0 && <div><h3 className="text-sm font-semibold text-iftext mb-3">Recorded posts</h3><div className="space-y-2">{recordedPosts.slice(0,10).map((p:any)=><div key={p._id} className="card"><div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold text-iftext">{p.groupName}</span><span className="text-[10px] font-semibold text-ifmuted">{p.postStatus}</span></div><p className="text-xs text-ifmuted mt-2 line-clamp-2">{p.postContent}</p></div>)}</div></div>}
     </div>
   );
 }

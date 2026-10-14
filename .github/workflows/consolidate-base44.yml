@@ -1,60 +1,26 @@
-name: Consolidate Base44 Product Source
+# Archived legacy repository: workflows only run when an owner explicitly dispatches.
+# No scheduled checks, no builds, no external publishing and no deployments.
+# All real app code, actions, and user authorization belong to interplanetary-fund2.
+name: "IFund Live — Authoritative source routing"
 
 on:
-  push:
-    paths:
-      - CONSOLIDATE_BASE44_NOW.md
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  consolidate:
-    runs-on: ubuntu-latest
+  live-service-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - name: Checkout target repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Import Base44 repository
+      - name: Verify live IFund (read-only)
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf base44-source
-          mkdir -p base44-source
-          tmp="$(mktemp -d)"
-          curl -fsSL "https://github.com/interplanetarysister/interplanetaryfund-base44/archive/refs/heads/main.tar.gz" -o "$tmp/source.tgz"
-          tar -xzf "$tmp/source.tgz" -C "$tmp"
-          src="$(find "$tmp" -maxdepth 1 -type d -name 'interplanetaryfund-base44-*' | head -n 1)"
-          test -n "$src"
-          cp -a "$src"/. base44-source/
-          rm -rf base44-source/.git
-          rm -rf base44-source/.github
-          rm -f base44-source/CONSOLIDATE_BASE44_NOW.md
-
-      - name: Record consolidation manifest
-        shell: bash
-        run: |
-          cat > BASE44_CONSOLIDATION.md <<'EOF'
-          # Base44 Consolidation
-
-          The `interplanetaryfund-base44` repository has been consolidated into this repository under `base44-source/` without discarding source files.
-
-          This is a source-preserving migration step. Files that duplicate current canonical implementations remain isolated under `base44-source/` until capability-by-capability reconciliation is completed. No secrets or Git metadata are intentionally imported.
-
-          Canonical product destinations remain:
-          - user-facing React/Vite implementation → `InterplanetaryFund`
-          - backend/admin/agents/treasury/operations → `interplanetary-fund-backend`
-          - this repository → migration/consolidation source
-          EOF
-          rm -f CONSOLIDATE_BASE44_NOW.md
-
-      - name: Commit consolidation
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Consolidate Base44 product source into interplanetary-fund" || exit 0
-          git push
+          echo "This is an on-demand IFund production diagnostic. Source and user actions are owned by interplanetary-fund2."
+          curl --fail --silent --show-error --location --max-time 20 https://interplanetaryfund.com/ -o /tmp/ifund-home.html
+          grep -Eiq '<html|<!doctype' /tmp/ifund-home.html
+          curl --fail --silent --show-error --location --max-time 20 https://api.github.com/repos/interplanetarysister/interplanetary-fund2 -o /tmp/ifund-repo.json
+          node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/ifund-repo.json','utf8')); if(r.full_name!=='interplanetarysister/interplanetary-fund2')process.exit(1)"
+          echo "Completed read-only IFund live-service checks. No user content, payment or deployment was changed."
